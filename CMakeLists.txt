@@ -39,6 +39,7 @@ add_executable(First_prj
         First_prj.c
         web_server.c
         prime_worker.c
+        wifi_manager.c
         state.c
 )
 
@@ -58,6 +59,8 @@ target_link_libraries(First_prj
         pico_multicore
         pico_cyw43_arch_lwip_threadsafe_background
         pico_lwip)
+
+
 
 # Add the standard include files to the build
 target_include_directories(First_prj PRIVATE

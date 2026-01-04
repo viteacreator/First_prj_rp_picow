@@ -8,6 +8,7 @@
 #include "state.h"
 #include "web_server.h"
 #include "prime_worker.h"
+#include "wifi_manager.h"
 
 // Set your Wi-Fi credentials here.
 #define WIFI_SSID     "WiFi"
@@ -24,17 +25,9 @@ int main(void) {
         ERRF("CYW43 init failed\n");
         return 1;
     }
-    cyw43_arch_enable_sta_mode();
-
-    LOGF("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD,
-                                           CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        ERRF("Wi-Fi connect failed\n");
-        return 1;
-    }
-
-    struct netif *netif = &cyw43_state.netif[CYW43_ITF_STA];
-    LOGF("Connected. IP: %s\n", ip4addr_ntoa(netif_ip4_addr(netif)));
+    wifi_mode_t mode = wifi_connect_or_start_ap(WIFI_SSID, WIFI_PASSWORD);
+    const struct netif *netif = wifi_get_netif(mode);
+    LOGF("IP: %s\n", ip4addr_ntoa(netif_ip4_addr(netif)));
 
     if (!start_http_server()) {
         ERRF("HTTP server failed to start\n");
