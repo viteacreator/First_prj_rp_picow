@@ -39,6 +39,7 @@ add_executable(First_prj
         First_prj.c
         web_server.c
         prime_worker.c
+        mdns_manager.c
         wifi_manager.c
         state.c
 )
@@ -58,7 +59,8 @@ target_link_libraries(First_prj
         pico_stdlib
         pico_multicore
         pico_cyw43_arch_lwip_threadsafe_background
-        pico_lwip)
+        pico_lwip
+        pico_lwip_mdns)
 
 
 

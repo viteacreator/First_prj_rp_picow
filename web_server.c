@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #include "pico/cyw43_arch.h"
+#include "pico/stdlib.h"
 
 #include "lwip/tcp.h"
 
@@ -87,6 +88,9 @@ static void build_page(char *out, size_t out_len) {
     int led_manual;
     int blink_ms;
     char last_msg[MAX_MSG_LEN];
+    static uint32_t last_count = 0;
+    static uint32_t last_ms = 0;
+    uint32_t rate = 0;
 
     critical_section_enter_blocking(&g_state.lock);
     prime_count = g_state.prime_count;
@@ -97,6 +101,14 @@ static void build_page(char *out, size_t out_len) {
     strncpy(last_msg, g_state.last_msg, sizeof(last_msg) - 1);
     last_msg[sizeof(last_msg) - 1] = '\0';
     critical_section_exit(&g_state.lock);
+
+    uint32_t now_ms = (uint32_t)to_ms_since_boot(get_absolute_time());
+    if (last_ms != 0 && now_ms > last_ms) {
+        uint32_t delta = now_ms - last_ms;
+        rate = (prime_count - last_count) * 1000u / delta;
+    }
+    last_ms = now_ms;
+    last_count = prime_count;
 
     snprintf(out, out_len,
         "<!doctype html>"
@@ -110,7 +122,7 @@ static void build_page(char *out, size_t out_len) {
         "</style></head><body>"
         "<h2>Pico W Web Console</h2>"
         "<div class='card'>"
-        "<div><b>Primes</b>: count=%lu last=%lu max=%lu</div>"
+        "<div><b>Prime worker (core1)</b>: count=%lu last=%lu max=%lu rate=%lu/s</div>"
         "<div><b>LED</b>: manual=%d blink_ms=%d</div>"
         "<div><b>Last msg</b>: %s</div>"
         "</div>"
@@ -136,6 +148,7 @@ static void build_page(char *out, size_t out_len) {
         (unsigned long)prime_count,
         (unsigned long)last_prime,
         (unsigned long)prime_max,
+        (unsigned long)rate,
         led_manual,
         blink_ms,
         last_msg[0] ? last_msg : "(none)");
