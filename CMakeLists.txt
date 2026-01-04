@@ -35,7 +35,12 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(First_prj First_prj.c )
+add_executable(First_prj
+        First_prj.c
+        web_server.c
+        prime_worker.c
+        state.c
+)
 
 pico_set_program_name(First_prj "First_prj")
 pico_set_program_version(First_prj "0.1")
