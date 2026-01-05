@@ -38,10 +38,12 @@ pico_sdk_init()
 add_executable(First_prj
         First_prj.c
         web_server.c
-        prime_worker.c
         mdns_manager.c
         wifi_manager.c
-        state.c
+        sim_worker.c
+        sim_state.c
+        pid.c
+        plant.c
 )
 
 pico_set_program_name(First_prj "First_prj")

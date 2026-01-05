@@ -12,6 +12,7 @@ bool mdns_start(const struct netif *netif, const char *hostname) {
         return false;
     }
 
+    LOGI("mDNS: init for host %s\n", hostname);
     cyw43_arch_lwip_begin();
     mdns_resp_init();
     if (mdns_resp_add_netif((struct netif *)netif, hostname) != ERR_OK) {
@@ -25,6 +26,6 @@ bool mdns_start(const struct netif *netif, const char *hostname) {
     mdns_resp_announce((struct netif *)netif);
     cyw43_arch_lwip_end();
 
-    LOGF("mDNS: http://%s.local\n", hostname);
+    LOGI("mDNS: http://%s.local\n", hostname);
     return true;
 }

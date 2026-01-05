@@ -5,9 +5,9 @@
 #include "lwip/ip4_addr.h"
 
 #include "debug.h"
-#include "state.h"
 #include "web_server.h"
-#include "prime_worker.h"
+#include "sim_state.h"
+#include "sim_worker.h"
 #include "wifi_manager.h"
 #include "mdns_manager.h"
 
@@ -20,7 +20,7 @@ int main(void) {
     stdio_init_all();
     sleep_ms(1500);
 
-    state_init();
+    sim_state_init();
 
     if (cyw43_arch_init()) {
         ERRF("CYW43 init failed\n");
@@ -38,17 +38,17 @@ int main(void) {
     }
     LOGF("HTTP server started\n");
 
-    prime_worker_start();
+    sim_worker_start();
 
     absolute_time_t next_blink = make_timeout_time_ms(200);
     bool led_state = false;
     while (true) {
         int led_manual;
         int blink_ms;
-        critical_section_enter_blocking(&g_state.lock);
-        led_manual = g_state.led_manual;
-        blink_ms = g_state.blink_ms;
-        critical_section_exit(&g_state.lock);
+        critical_section_enter_blocking(&g_sim.lock);
+        led_manual = g_sim.cfg.running ? 1 : 0;
+        blink_ms = g_sim.cfg.running ? 200 : 0;
+        critical_section_exit(&g_sim.lock);
 
         if (blink_ms > 0) {
             if (absolute_time_diff_us(get_absolute_time(), next_blink) <= 0) {

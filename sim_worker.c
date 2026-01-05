@@ -1,0 +1,99 @@
+#include "pico/stdlib.h"
+#include "pico/multicore.h"
+
+#include "pid.h"
+#include "plant.h"
+#include "sim_state.h"
+#include "debug.h"
+
+#define SIM_DT_S 0.01f
+#define DEAD_TIME_BUFFER 128
+
+/** Core 1 entry: simulate plant dynamics and apply PID in real time. */
+static void core1_main(void) {
+    pid_t pid;
+    pid_init(&pid, 2.0f, 0.5f, 0.1f, 0.0f, 100.0f);
+
+    second_order_state_t second_state = {0};
+
+    float y = 25.0f;
+    float u = 0.0f;
+
+    float delay_buf[DEAD_TIME_BUFFER] = {0};
+    int delay_idx = 0;
+    int delay_len = 0;
+
+    absolute_time_t next_tick = make_timeout_time_ms((int)(SIM_DT_S * 1000.0f));
+    LOGI("SIM core1 started, dt=%.3f s\n", SIM_DT_S);
+
+    while (true) {
+        sim_config_t cfg;
+        int reset_req = 0;
+
+        critical_section_enter_blocking(&g_sim.lock);
+        cfg = g_sim.cfg;
+        if (g_sim.reset_requested) {
+            reset_req = 1;
+            g_sim.reset_requested = 0;
+        }
+        critical_section_exit(&g_sim.lock);
+
+        if (reset_req) {
+            LOGI("SIM reset requested\n");
+            pid_init(&pid, cfg.pid.kp, cfg.pid.ki, cfg.pid.kd, 0.0f, 100.0f);
+            second_state.state1 = 0.0f;
+            second_state.state2 = 0.0f;
+            y = 25.0f;
+            u = 0.0f;
+            delay_idx = 0;
+            delay_len = 0;
+        }
+
+        pid.kp = cfg.pid.kp;
+        pid.ki = cfg.pid.ki;
+        pid.kd = cfg.pid.kd;
+
+        float setpoint = cfg.running ? cfg.setpoint : 0.0f;
+        if (cfg.running) {
+            float error = setpoint - y;
+            u = pid_step(&pid, error, SIM_DT_S);
+        } else {
+            u = 0.0f;
+        }
+
+        int desired_len = (int)(cfg.plant.dead_time_ms / (SIM_DT_S * 1000.0f));
+        if (desired_len < 0) desired_len = 0;
+        if (desired_len >= DEAD_TIME_BUFFER) desired_len = DEAD_TIME_BUFFER - 1;
+        delay_len = desired_len;
+
+        delay_buf[delay_idx] = u;
+        int read_idx = delay_idx - delay_len;
+        if (read_idx < 0) read_idx += DEAD_TIME_BUFFER;
+        float u_delayed = delay_buf[read_idx];
+        delay_idx = (delay_idx + 1) % DEAD_TIME_BUFFER;
+
+        if (cfg.plant.model == PLANT_FIRST_ORDER) {
+            first_order_params_t p = {cfg.plant.gain, cfg.plant.tau};
+            y = plant_first_order_step(y, u_delayed, &p, SIM_DT_S);
+        } else {
+            second_order_params_t p = {cfg.plant.wn, cfg.plant.zeta, cfg.plant.gain};
+            y = plant_second_order_step(&second_state, u_delayed, &p, SIM_DT_S);
+        }
+        LOGD("SIM step: sp=%.2f u=%.3f y=%.2f\n", setpoint, u, y);
+
+        critical_section_enter_blocking(&g_sim.lock);
+        g_sim.rt.time_s += SIM_DT_S;
+        g_sim.rt.setpoint = setpoint;
+        g_sim.rt.control = u;
+        g_sim.rt.output = y;
+        critical_section_exit(&g_sim.lock);
+
+        sleep_until(next_tick);
+        next_tick = delayed_by_ms(next_tick, (int)(SIM_DT_S * 1000.0f));
+    }
+}
+
+/** Launch the core1 worker so core0 can handle Wi-Fi and UI. */
+void sim_worker_start(void) {
+    multicore_launch_core1(core1_main);
+}
