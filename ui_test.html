@@ -53,6 +53,16 @@
             margin: 0;
             vertical-align: middle;
         }
+        input[type="color"] {
+            appearance: none;
+            -webkit-appearance: none;
+            padding: 0;
+            border: 2px solid #222;
+            margin: 0;
+            width: 28px;
+            height: 20px;
+            background: transparent;
+        }
 
         canvas {
             border: 2px solid #222;
@@ -103,7 +113,7 @@
             <circle id="sum_block" class="diag-block" cx="230" cy="180" r="28" /> <text class="diag-text" x="222" y="172">+</text> <text class="diag-text" x="222" y="202">-</text> <!-- e(t) -->
             <line id="line_e" class="diag-line" x1="258" y1="180" x2="290" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="266" y="170">e(t)</text> <!-- PID controller -->
             <rect id="pid_block" class="diag-block" x="290" y="120" width="260" height="120" /> <text class="diag-title" x="420" y="148" text-anchor="middle">PID controller</text> <!-- PID inputs in one row (like reference) -->
-            <foreignObject x="300" y="160" width="240" height="80">
+            <foreignObject x="295" y="160" width="250" height="50">
                 <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;gap:0px;justify-content:center;align-items:flex-start;font-size:12px;">
                     <div style="display:flex;flex-direction:column;align-items:center;">
                         <div>Kp</div><input id="kp" value="0.000" style="width:45px;padding:6px;margin:2px;" />
@@ -182,17 +192,23 @@
         </div>
     </div>
     <div class="card">
-        <div><b>Time</b>: <span id="time">0</span> s</div>
-        <div><b>Output</b>: <span id="output">0</span> C</div>
-        <div><b>Control u</b>: <span id="control">0</span></div>
-        <div><b>Actuator</b>: <span id="actuator">0</span></div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <div><b>Time</b>: <span id="time">0</span> s</div>
+            <div><b>Output</b>: <span id="output">0</span> C</div>
+            <div><b>Control u</b>: <span id="control">0</span></div>
+            <div><b>Actuator</b>: <span id="actuator">0</span></div>
+        </div>
     </div>
     <div class="card">
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-start;">
             <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_sp" checked style="margin:0;">Setpoint</label>
+            <input type="color" id="color_sp" value="#000000" style="margin:0;width:28px;height:20px;">
             <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u" checked style="margin:0;">Control u</label>
+            <input type="color" id="color_u" value="#9b9b9b" style="margin:0;width:28px;height:20px;">
             <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u1" checked style="margin:0;">Actuator u1</label>
+            <input type="color" id="color_u1" value="#6abf4b" style="margin:0;width:28px;height:20px;">
             <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_y" checked style="margin:0;">Output y</label>
+            <input type="color" id="color_y" value="#b00000" style="margin:0;width:28px;height:20px;">
         </div>
         <canvas id="plot" width="1600" height="600"></canvas>
     </div>
@@ -217,7 +233,18 @@
         document.getElementById('tau').addEventListener('input', updateTF);
         document.getElementById('wn').addEventListener('input', updateTF);
         document.getElementById('zeta').addEventListener('input', updateTF);
+        function updateColorPickers() {
+            document.getElementById('color_sp').style.background = document.getElementById('color_sp').value;
+            document.getElementById('color_u').style.background = document.getElementById('color_u').value;
+            document.getElementById('color_u1').style.background = document.getElementById('color_u1').value;
+            document.getElementById('color_y').style.background = document.getElementById('color_y').value;
+        }
+        document.getElementById('color_sp').addEventListener('input', updateColorPickers);
+        document.getElementById('color_u').addEventListener('input', updateColorPickers);
+        document.getElementById('color_u1').addEventListener('input', updateColorPickers);
+        document.getElementById('color_y').addEventListener('input', updateColorPickers);
         updateTF();
+        updateColorPickers();
     </script>
 </body>
 
