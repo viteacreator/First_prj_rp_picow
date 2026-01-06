@@ -156,10 +156,16 @@
     <div class="card">
         <div><b>Time</b>: <span id="time">0</span> s</div>
         <div><b>Output</b>: <span id="output">0</span> C</div>
-        <div><b>Control</b>: <span id="control">0</span> (0..100)</div>
+        <div><b>Control</b>: <span id="control">0</span> (0..100)</div><div><b>Actuator</b>: <span id="actuator">0</span></div>
     </div>
     <div class="card">
-        <div> <label><input type="checkbox" id="show_sp" checked> Setpoint</label> <label><input type="checkbox" id="show_u" checked> Control u</label> <label><input type="checkbox" id="show_y" checked> Output y</label> </div> <canvas id="plot" width="1600" height="600"></canvas>
+        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_sp" checked>Setpoint</label>
+            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_u" checked>Control u</label>
+            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_u1" checked>Actuator u1</label>
+            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_y" checked>Output y</label>
+        </div>
+        <canvas id="plot" width="1600" height="600"></canvas>
     </div>
     <script>
         /* UI test stub: update transfer function text only. */
@@ -187,3 +193,4 @@
 </body>
 
 </html>
+

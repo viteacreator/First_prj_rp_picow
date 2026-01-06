@@ -9,6 +9,24 @@
 #define SIM_DT_S 0.01f
 #define DEAD_TIME_BUFFER 128
 
+/** Map controller output into actuator output based on allowed directions. */
+static float actuator_apply(float u, int inject, int absorb) {
+    /* Inject-only: clamp negative commands to zero. */
+    if (inject && !absorb) {
+        return (u > 0.0f) ? u : 0.0f;
+    }
+    /* Absorb-only: clamp positive commands to zero. */
+    if (!inject && absorb) {
+        return (u < 0.0f) ? u : 0.0f;
+    }
+    /* Bidirectional: pass through. */
+    if (inject && absorb) {
+        return u;
+    }
+    /* Disabled actuator: no effect on plant. */
+    return 0.0f;
+}
+
 /** Core 1 entry: simulate plant dynamics and apply PID in real time. */
 static void core1_main(void) {
     pid_t pid;
@@ -18,6 +36,7 @@ static void core1_main(void) {
 
     float y = 25.0f;
     float u = 0.0f;
+    float u1 = 0.0f;
 
     float delay_buf[DEAD_TIME_BUFFER] = {0};
     int delay_idx = 0;
@@ -60,13 +79,15 @@ static void core1_main(void) {
         } else {
             u = 0.0f;
         }
+        /* Apply actuator limits based on inject/absorb selection. */
+        u1 = actuator_apply(u, cfg.act_inject, cfg.act_absorb);
 
         int desired_len = (int)(cfg.plant.dead_time_ms / (SIM_DT_S * 1000.0f));
         if (desired_len < 0) desired_len = 0;
         if (desired_len >= DEAD_TIME_BUFFER) desired_len = DEAD_TIME_BUFFER - 1;
         delay_len = desired_len;
 
-        delay_buf[delay_idx] = u;
+        delay_buf[delay_idx] = u1;
         int read_idx = delay_idx - delay_len;
         if (read_idx < 0) read_idx += DEAD_TIME_BUFFER;
         float u_delayed = delay_buf[read_idx];
@@ -79,12 +100,13 @@ static void core1_main(void) {
             second_order_params_t p = {cfg.plant.wn, cfg.plant.zeta, cfg.plant.gain};
             y = plant_second_order_step(&second_state, u_delayed, &p, SIM_DT_S);
         }
-        LOGD("SIM step: sp=%.2f u=%.3f y=%.2f\n", setpoint, u, y);
+        LOGD("SIM step: sp=%.2f u=%.3f u1=%.3f y=%.2f\n", setpoint, u, u1, y);
 
         critical_section_enter_blocking(&g_sim.lock);
         g_sim.rt.time_s += SIM_DT_S;
         g_sim.rt.setpoint = setpoint;
         g_sim.rt.control = u;
+        g_sim.rt.actuator = u1;
         g_sim.rt.output = y;
         critical_section_exit(&g_sim.lock);
 

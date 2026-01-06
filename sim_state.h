@@ -27,6 +27,8 @@ typedef struct {
     float setpoint;
     pid_params_t pid;
     plant_params_t plant;
+    int act_inject;
+    int act_absorb;
     int running;
 } sim_config_t;
 
@@ -34,6 +36,7 @@ typedef struct {
     float time_s;
     float setpoint;
     float control;
+    float actuator;
     float output;
 } sim_runtime_t;
 
