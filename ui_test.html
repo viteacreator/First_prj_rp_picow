@@ -38,12 +38,20 @@
             background: #fff;
         }
 
-        input,
+        input:not([type="checkbox"]),
         select {
             padding: 6px;
             border: 2px solid #222;
             margin: 4px;
             width: 110px;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            padding: 0;
+            border: 0;
+            margin: 0;
+            vertical-align: middle;
         }
 
         canvas {
@@ -94,31 +102,51 @@
             <line id="line_r" class="diag-line" x1="160" y1="180" x2="202" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="168" y="170">r(t)</text> <!-- Summing junction -->
             <circle id="sum_block" class="diag-block" cx="230" cy="180" r="28" /> <text class="diag-text" x="222" y="172">+</text> <text class="diag-text" x="222" y="202">-</text> <!-- e(t) -->
             <line id="line_e" class="diag-line" x1="258" y1="180" x2="290" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="266" y="170">e(t)</text> <!-- PID controller -->
-            <rect id="pid_block" class="diag-block" x="290" y="130" width="260" height="100" /> <text class="diag-title" x="420" y="148" text-anchor="middle">PID controller</text> <!-- PID inputs in one row (like reference) -->
+            <rect id="pid_block" class="diag-block" x="290" y="120" width="260" height="120" /> <text class="diag-title" x="420" y="148" text-anchor="middle">PID controller</text> <!-- PID inputs in one row (like reference) -->
             <foreignObject x="300" y="160" width="240" height="80">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;gap:1px;justify-content:center;align-items:flex-start;font-size:12px;">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;gap:0px;justify-content:center;align-items:flex-start;font-size:12px;">
                     <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Kp</div><input id="kp" value="2.02345" style="width:45px;padding:6px;margin:2px;" />
+                        <div>Kp</div><input id="kp" value="0.000" style="width:45px;padding:6px;margin:2px;" />
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Ki</div><input id="ki" value="0.54566" style="width:45px;padding:6px;margin:2px;" />
+                        <div>Ki</div><input id="ki" value="0.000" style="width:45px;padding:6px;margin:2px;" />
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Kd</div><input id="kd" value="0.14566" style="width:45px;padding:6px;margin:2px;" />
+                        <div>Kd</div><input id="kd" value="0.000" style="width:45px;padding:6px;margin:2px;" />
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>dT</div><input id="dt" value="0.016465" style="width:30px;padding:6px;margin:2px;" />
+                        <div>dT</div><input id="dt" value="0" style="width:30px;padding:6px;margin:2px;" />
                     </div>
                 </div>
             </foreignObject> <!-- u(t) -->
             <line id="line_u" class="diag-line" x1="550" y1="180" x2="600" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="555" y="170">u(t)</text> <!-- Actuator / FCE -->
-            <rect id="act_block" class="diag-block" x="600" y="130" width="220" height="100" /> <text class="diag-title" x="705" y="148" text-anchor="middle">Actuator / FCE</text>
-            <foreignObject x="610" y="160" width="235" height="70">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.2;"> <label><input type="checkbox" id="act_inject" style="width:22px;height:22px;vertical-align:middle;" /> Inject energy</label><br /> <label><input type="checkbox" id="act_absorb" style="width:22px;height:22px;vertical-align:middle;" /> Absorb energy</label> </div>
+            <rect id="act_block" class="diag-block" x="600" y="115" width="220" height="130" /> <text class="diag-title" x="705" y="133" text-anchor="middle">Actuator / FCE</text>
+            <foreignObject x="610" y="140" width="235" height="100">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.2;">
+
+                    <label style="display:flex;align-items:center;gap:10px;margin:0 px;">
+                        <input type="checkbox" id="act_inject" style="width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;">
+                        <span style="display:inline-block;line-height:22px;">Inject energy</span>
+                    </label>
+
+                    <label style="display:flex;align-items:center;gap:8px;margin:6px 0 0 0;">
+                        <input type="checkbox" id="act_absorb" style="width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;">
+                        <span style="display:inline-block;line-height:22px;">Absorb energy</span>
+                    </label>
+
+                    <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+                        <span>Min</span>
+                        <input id="act_min" value="-100" style="width:50px;padding:6px;margin:2px;" />
+                        <span>Max</span>
+                        <input id="act_max" value="100" style="width:50px;padding:6px;margin:2px;" />
+                    </div>
+
+                </div>
+
             </foreignObject> <!-- u1(t) -->
             <line id="line_u1" class="diag-line" x1="820" y1="180" x2="870" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="825" y="170">u1(t)</text> <!-- Plant / Process (bigger, centered like reference) -->
-            <rect id="plant_block" class="diag-block" x="870" y="110" width="360" height="200" /> <text class="diag-title" x="1050" y="128" text-anchor="middle">Plant / Process</text>
-            <foreignObject x="885" y="134" width="330" height="170">
+            <rect id="plant_block" class="diag-block" x="870" y="110" width="360" height="215" /> <text class="diag-title" x="1050" y="128" text-anchor="middle">Plant / Process</text>
+            <foreignObject x="885" y="134" width="330" height="180">
                 <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                         <div style="font-weight:bold;">Model</div> <select id="model" style="width:240px;">
@@ -133,8 +161,8 @@
                         <div>Zeta <input id="zeta" value="0.7" style="width:50px;padding:6px;margin:2px;" /></div>
                         <div>Dead <input id="dead" value="0" style="width:50px;padding:6px;margin:2px;" /> ms</div>
                     </div>
-                    <div style="border:2px solid #222;padding:6px;margin-top:6px;font-size:11px;">
-                        <div id="tf_text"></div>
+                    <div style="border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;">
+                        <div id="tf_text">Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70</div>
                     </div>
                 </div>
             </foreignObject> <!-- y(t) output -->
@@ -156,14 +184,15 @@
     <div class="card">
         <div><b>Time</b>: <span id="time">0</span> s</div>
         <div><b>Output</b>: <span id="output">0</span> C</div>
-        <div><b>Control</b>: <span id="control">0</span> (0..100)</div><div><b>Actuator</b>: <span id="actuator">0</span></div>
+        <div><b>Control u</b>: <span id="control">0</span></div>
+        <div><b>Actuator</b>: <span id="actuator">0</span></div>
     </div>
     <div class="card">
-        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_sp" checked>Setpoint</label>
-            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_u" checked>Control u</label>
-            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_u1" checked>Actuator u1</label>
-            <label style="display:inline-flex;gap:6px;align-items:flex-start;"><input type="checkbox" id="show_y" checked>Output y</label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-start;">
+            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_sp" checked style="margin:0;">Setpoint</label>
+            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u" checked style="margin:0;">Control u</label>
+            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u1" checked style="margin:0;">Actuator u1</label>
+            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_y" checked style="margin:0;">Output y</label>
         </div>
         <canvas id="plot" width="1600" height="600"></canvas>
     </div>
@@ -193,4 +222,3 @@
 </body>
 
 </html>
-

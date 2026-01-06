@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 // Debug levels: 0=off, 1=error, 2=warn, 3=info, 4=debug
-#define DEBUG_LEVEL 4
+// #define DEBUG_LEVEL 4
 
 #ifndef DEBUG_LEVEL
 #define DEBUG_LEVEL 3

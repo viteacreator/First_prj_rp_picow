@@ -29,6 +29,8 @@ typedef struct {
     plant_params_t plant;
     int act_inject;
     int act_absorb;
+    float act_min;
+    float act_max;
     int running;
 } sim_config_t;
 

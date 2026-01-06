@@ -24,8 +24,11 @@ float pid_step(pid_t *pid, float error, float dt) {
 
     float out = (pid->kp * error) + (pid->ki * pid->integrator) + (pid->kd * derivative);
 
-    if (out > pid->out_max) out = pid->out_max;
-    if (out < pid->out_min) out = pid->out_min;
+    /* Clamp only when limits are enabled (min <= max). */
+    if (pid->out_min <= pid->out_max) {
+        if (out > pid->out_max) out = pid->out_max;
+        if (out < pid->out_min) out = pid->out_min;
+    }
 
     pid->prev_error = error;
     return out;

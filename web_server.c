@@ -83,6 +83,8 @@ static void apply_config_from_query(const char *path) {
     const float max_zeta = 2.0f;
     const float min_dead = 0.0f;
     const float max_dead = 5000.0f;
+    const float min_act = -1000.0f;
+    const float max_act = 1000.0f;
 
     critical_section_enter_blocking(&g_sim.lock);
 
@@ -115,6 +117,16 @@ static void apply_config_from_query(const char *path) {
         if (value > max_dead) value = max_dead;
         g_sim.cfg.plant.dead_time_ms = value;
     }
+    if (get_query_float(path, "act_min", &value)) {
+        if (value < min_act) value = min_act;
+        if (value > max_act) value = max_act;
+        g_sim.cfg.act_min = value;
+    }
+    if (get_query_float(path, "act_max", &value)) {
+        if (value < min_act) value = min_act;
+        if (value > max_act) value = max_act;
+        g_sim.cfg.act_max = value;
+    }
 
     if (get_query_int(path, "model", &ivalue)) {
         g_sim.cfg.plant.model = (ivalue == 1) ? PLANT_SECOND_ORDER : PLANT_FIRST_ORDER;
@@ -123,6 +135,12 @@ static void apply_config_from_query(const char *path) {
     if (get_query_int(path, "act_absorb", &ivalue)) g_sim.cfg.act_absorb = ivalue ? 1 : 0;
     if (get_query_int(path, "run", &ivalue)) g_sim.cfg.running = ivalue ? 1 : 0;
     if (get_query_int(path, "reset", &ivalue) && ivalue) g_sim.reset_requested = 1;
+
+    if (g_sim.cfg.act_min > g_sim.cfg.act_max) {
+        float tmp = g_sim.cfg.act_min;
+        g_sim.cfg.act_min = g_sim.cfg.act_max;
+        g_sim.cfg.act_max = tmp;
+    }
 
     critical_section_exit(&g_sim.lock);
 }
@@ -159,7 +177,9 @@ static void build_state_json(char *out, size_t out_len) {
         "\"output\":%.2f,"
         "\"reset\":%d,"
         "\"act_inject\":%d,"
-        "\"act_absorb\":%d"
+        "\"act_absorb\":%d,"
+        "\"act_min\":%.2f,"
+        "\"act_max\":%.2f"
         "}",
         cfg.running,
         rt.setpoint,
@@ -179,7 +199,9 @@ static void build_state_json(char *out, size_t out_len) {
         rt.output,
         reset_req,
         cfg.act_inject,
-        cfg.act_absorb);
+        cfg.act_absorb,
+        cfg.act_min,
+        cfg.act_max);
 }
 
 /** Build the HTML shell (JS is served separately at /app.js). */
@@ -194,7 +216,8 @@ static void build_page(char *out, size_t out_len) {
         ".controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}"
         "button{padding:8px 12px;margin:4px;border:2px solid #222;background:#eae2d0;}"
         "button:active{background:#fff;}"
-        "input,select{padding:6px;border:2px solid #222;margin:4px;width:110px;}"
+        "input:not([type='checkbox']),select{padding:6px;border:2px solid #222;margin:4px;width:110px;}"
+        "input[type='checkbox']{width:auto;padding:0;border:0;margin:0;vertical-align:middle;}"
         "canvas{border:2px solid #222;background:#fff;}"
         ".diag-block{fill:#fff;stroke:#222;stroke-width:2;}"
         ".diag-line{stroke:#222;stroke-width:2;fill:none;}"
@@ -222,30 +245,42 @@ static void build_page(char *out, size_t out_len) {
         "<text class='diag-text' x='222' y='172'>+</text>"
         "<text class='diag-text' x='222' y='202'>-</text>"
         "<line id='line_e' class='diag-line' x1='258' y1='180' x2='290' y2='180' marker-end='url(#arrow)'/>"
-        "<text class='diag-text' x='266' y='170'>ε(t)</text>"
-        "<rect id='pid_block' class='diag-block' x='290' y='130' width='260' height='100'/>"
+        "<text class='diag-text' x='266' y='170'>e(t)</text>"
+        "<rect id='pid_block' class='diag-block' x='290' y='120' width='260' height='120'/>"
         "<text class='diag-title' x='420' y='148' text-anchor='middle'>PID controller</text>"
         "<foreignObject x='300' y='160' width='240' height='80'>"
-        "<div xmlns='http://www.w3.org/1999/xhtml' style='display:flex;gap:1px;justify-content:center;align-items:flex-start;font-size:12px;'>"
-        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kp</div><input id='kp' value='2.02345' style='width:45px;padding:6px;margin:2px;'/></div>"
-        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Ki</div><input id='ki' value='0.54566' style='width:45px;padding:6px;margin:2px;'/></div>"
-        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kd</div><input id='kd' value='0.14566' style='width:45px;padding:6px;margin:2px;'/></div>"
-        "<div style='display:flex;flex-direction:column;align-items:center;'><div>dT</div><input id='dt' value='0.016465' style='width:30px;padding:6px;margin:2px;'/></div>"
+        "<div xmlns='http://www.w3.org/1999/xhtml' style='display:flex;gap:0px;justify-content:center;align-items:flex-start;font-size:12px;'>"
+        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kp</div><input id='kp' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
+        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Ki</div><input id='ki' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
+        "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kd</div><input id='kd' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
+        "<div style='display:flex;flex-direction:column;align-items:center;'><div>dT</div><input id='dt' value='0' style='width:30px;padding:6px;margin:2px;'/></div>"
         "</div></foreignObject>"
         "<line id='line_u' class='diag-line' x1='550' y1='180' x2='600' y2='180' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='555' y='170'>u(t)</text>"
-        "<rect id='act_block' class='diag-block' x='600' y='130' width='220' height='100'/>"
-        "<text class='diag-title' x='705' y='148' text-anchor='middle'>Actuator / FCE</text>"
-        "<foreignObject x='610' y='160' width='235' height='70'>"
+        "<rect id='act_block' class='diag-block' x='600' y='115' width='220' height='130'/>"
+        "<text class='diag-title' x='705' y='133' text-anchor='middle'>Actuator / FCE</text>"
+        "<foreignObject x='610' y='140' width='235' height='100'>"
         "<div xmlns='http://www.w3.org/1999/xhtml' style='font-size:12px;line-height:1.2;'>"
-        "<label><input type='checkbox' id='act_inject' style='width:22px;height:22px;vertical-align:middle;' onchange='saveSettings();updateActuatorModeUI()'/> Inject energy</label><br/>"
-        "<label><input type='checkbox' id='act_absorb' style='width:22px;height:22px;vertical-align:middle;' onchange='saveSettings();updateActuatorModeUI()'/> Absorb energy</label>"
+        "<label style='display:flex;align-items:center;gap:10px;margin:0 px;'>"
+        "<input type='checkbox' id='act_inject' style='width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;' onchange='saveSettings();updateActuatorModeUI()'>"
+        "<span style='display:inline-block;line-height:22px;'>Inject energy</span>"
+        "</label>"
+        "<label style='display:flex;align-items:center;gap:8px;margin:6px 0 0 0;'>"
+        "<input type='checkbox' id='act_absorb' style='width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;' onchange='saveSettings();updateActuatorModeUI()'>"
+        "<span style='display:inline-block;line-height:22px;'>Absorb energy</span>"
+        "</label>"
+        "<div style='margin-top:8px;display:flex;gap:6px;align-items:center;'>"
+        "<span>Min</span>"
+        "<input id='act_min' value='-100' style='width:50px;padding:6px;margin:2px;'/>"
+        "<span>Max</span>"
+        "<input id='act_max' value='100' style='width:50px;padding:6px;margin:2px;'/>"
+        "</div>"
         "</div></foreignObject>"
         "<line id='line_u1' class='diag-line' x1='820' y1='180' x2='870' y2='180' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='825' y='170'>u1(t)</text>"
-        "<rect id='plant_block' class='diag-block' x='870' y='110' width='360' height='200'/>"
+        "<rect id='plant_block' class='diag-block' x='870' y='110' width='360' height='215'/>"
         "<text class='diag-title' x='1050' y='128' text-anchor='middle'>Plant / Process</text>"
-        "<foreignObject x='885' y='134' width='330' height='170'>"
+        "<foreignObject x='885' y='134' width='330' height='180'>"
         "<div xmlns='http://www.w3.org/1999/xhtml' style='font-size:12px;'>"
         "<div style='display:flex;align-items:center;gap:8px;margin-bottom:4px;'><div style='font-weight:bold;'>Model</div><select id='model' style='width:240px;'><option value='0'>First order</option><option value='1' selected>Second order</option></select></div>"
         "<div style='display:flex;gap:10px;flex-wrap:wrap;'>"
@@ -255,7 +290,7 @@ static void build_page(char *out, size_t out_len) {
         "<div>Zeta <input id='zeta' value='0.7' style='width:50px;padding:6px;margin:2px;'/></div>"
         "<div>Dead <input id='dead' value='0' style='width:50px;padding:6px;margin:2px;'/> ms</div>"
         "</div>"
-        "<div style='border:2px solid #222;padding:6px;margin-top:6px;font-size:11px;'><div id='tf_text'></div></div>"
+        "<div style='border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;'><div id='tf_text'>Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70</div></div>"
         "</div></foreignObject>"
         "<line id='line_y' class='diag-line' x1='1230' y1='180' x2='1370' y2='180' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='1380' y='175'>y(t)</text>"
@@ -286,15 +321,15 @@ static void build_page(char *out, size_t out_len) {
         "<div class='card'>"
         "<div><b>Time</b>: <span id='time'>0</span> s</div>"
         "<div><b>Output</b>: <span id='output'>0</span> C</div>"
-        "<div><b>Control</b>: <span id='control'>0</span> (0..100)</div>"
+        "<div><b>Control u</b>: <span id='control'>0</span></div>"
         "<div><b>Actuator</b>: <span id='actuator'>0</span></div>"
         "</div>"
         "<div class='card'>"
-        "<div style='display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;'>"
-        "<label style='display:inline-flex;gap:6px;align-items:flex-start;'><input type='checkbox' id='show_sp' checked onchange='saveSettings();draw()'>Setpoint</label>"
-        "<label style='display:inline-flex;gap:6px;align-items:flex-start;'><input type='checkbox' id='show_u' checked onchange='saveSettings();draw()'>Control u</label>"
-        "<label style='display:inline-flex;gap:6px;align-items:flex-start;'><input type='checkbox' id='show_u1' checked onchange='saveSettings();draw()'>Actuator u1</label>"
-        "<label style='display:inline-flex;gap:6px;align-items:flex-start;'><input type='checkbox' id='show_y' checked onchange='saveSettings();draw()'>Output y</label>"
+        "<div style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-start;'>"
+        "<label style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_sp' checked onchange='saveSettings();draw()' style='margin:0;'>Setpoint</label>"
+        "<label style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_u' checked onchange='saveSettings();draw()' style='margin:0;'>Control u</label>"
+        "<label style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_u1' checked onchange='saveSettings();draw()' style='margin:0;'>Actuator u1</label>"
+        "<label style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_y' checked onchange='saveSettings();draw()' style='margin:0;'>Output y</label>"
         "</div>"
         "<canvas id='plot' width='1600' height='600'></canvas>"
         "</div>"
@@ -304,7 +339,7 @@ static void build_page(char *out, size_t out_len) {
 static void build_app_js(char *out, size_t out_len) {
     snprintf(out, out_len,
         "/* Sampling and history buffers for plotting. */"
-        "var sampleMs=200;var windowSec=100;var hist=500;var sp=[],y=[],u=[],u1=[];var synced=false;"
+        "var sampleMs=200;var windowSec=100;var hist=500;var sp=[],y=[],u=[],u1=[];var synced=false;var tfPending=false;"
         "function q(id){return document.getElementById(id)}"
         "function api(url,cb){"
         "var x=new XMLHttpRequest();"
@@ -320,6 +355,7 @@ static void build_app_js(char *out, size_t out_len) {
         "kp:q('kp').value,ki:q('ki').value,kd:q('kd').value,dt:q('dt').value,"
         "model:q('model').value,gain:q('gain').value,tau:q('tau').value,"
         "wn:q('wn').value,zeta:q('zeta').value,dead:q('dead').value,"
+        "act_min:q('act_min').value,act_max:q('act_max').value,"
         "window:q('window').value,"
         "show_sp:q('show_sp').checked,show_u:q('show_u').checked,show_u1:q('show_u1').checked,show_y:q('show_y').checked,"
         "act_inject:q('act_inject').checked,act_absorb:q('act_absorb').checked"
@@ -341,6 +377,8 @@ static void build_app_js(char *out, size_t out_len) {
         "if(s.wn!==undefined)q('wn').value=s.wn;"
         "if(s.zeta!==undefined)q('zeta').value=s.zeta;"
         "if(s.dead!==undefined)q('dead').value=s.dead;"
+        "if(s.act_min!==undefined)q('act_min').value=s.act_min;"
+        "if(s.act_max!==undefined)q('act_max').value=s.act_max;"
         "if(s.window!==undefined)q('window').value=s.window;"
         "if(s.show_sp!==undefined)q('show_sp').checked=!!s.show_sp;"
         "if(s.show_u!==undefined)q('show_u').checked=!!s.show_u;"
@@ -348,6 +386,7 @@ static void build_app_js(char *out, size_t out_len) {
         "if(s.show_y!==undefined)q('show_y').checked=!!s.show_y;"
         "if(s.act_inject!==undefined)q('act_inject').checked=!!s.act_inject;"
         "if(s.act_absorb!==undefined)q('act_absorb').checked=!!s.act_absorb;"
+        "updateActuatorModeUI();"
         "setWindow();"
         "return true;}catch(e){return false;}"
         "}"
@@ -363,9 +402,13 @@ static void build_app_js(char *out, size_t out_len) {
         "+'&wn='+encodeURIComponent(q('wn').value)"
         "+'&zeta='+encodeURIComponent(q('zeta').value)"
         "+'&dead='+encodeURIComponent(q('dead').value)"
+        "+'&act_min='+encodeURIComponent(q('act_min').value)"
+        "+'&act_max='+encodeURIComponent(q('act_max').value)"
         "+'&act_inject='+(q('act_inject').checked?1:0)"
         "+'&act_absorb='+(q('act_absorb').checked?1:0);"
-        "saveSettings();api(url,updateUI);}"
+        "saveSettings();tfPending=true;api(url,function(d){"
+        "if(d&&tfPending){q('tf_text').textContent=transferText(d);tfPending=false;}"
+        "updateUI(d);});}"
         "/* Recalculate history length when time window changes. */"
         "function setWindow(){"
         "var v=parseFloat(q('window').value);"
@@ -388,7 +431,6 @@ static void build_app_js(char *out, size_t out_len) {
         "q('output').textContent=d.output.toFixed(2);"
         "q('control').textContent=d.control.toFixed(3);"
         "q('actuator').textContent=d.actuator.toFixed(3);"
-        "q('tf_text').textContent=transferText(d);"
         "if(!synced){"
         "if(!loadSettings()){"
         "q('setpoint').value=d.setpoint_cfg.toFixed(2);"
@@ -402,6 +444,8 @@ static void build_app_js(char *out, size_t out_len) {
         "q('wn').value=d.wn.toFixed(2);"
         "q('zeta').value=d.zeta.toFixed(2);"
         "q('dead').value=d.dead.toFixed(1);"
+        "q('act_min').value=d.act_min.toFixed(2);"
+        "q('act_max').value=d.act_max.toFixed(2);"
         "q('act_inject').checked=!!d.act_inject;"
         "q('act_absorb').checked=!!d.act_absorb;"
         "setWindow();"
@@ -429,11 +473,11 @@ static void build_app_js(char *out, size_t out_len) {
         "var absorb=q('act_absorb').checked;"
         "var block=q('act_block');"
         "if(!block)return;"
-        "var fill='#fff';"
-        "if(inject&&!absorb)fill='#f6d6d6';"
-        "else if(!inject&&absorb)fill='#d6e7f6';"
-        "else if(!inject&&!absorb)fill='#e0e0e0';"
-        "block.setAttribute('fill',fill);"
+        "var fill='#f5fff1ff';"
+        "if(inject&&!absorb)fill='#fffdefff';"
+        "else if(!inject&&absorb)fill='#f0f8ffff';"
+        "else if(!inject&&!absorb)fill='#ffbabaff';"
+        "block.style.fill=fill;"
         "}"
         "/* Redraw the plot using the current buffers and toggles. */"
         "function draw(){"
@@ -477,7 +521,7 @@ typedef struct {
     size_t offset;
     int active;
     char header[256];
-    char body[8192];
+    char body[16384];
 } http_response_t;
 
 static http_response_t g_resp;

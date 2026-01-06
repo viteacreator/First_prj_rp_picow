@@ -19,6 +19,8 @@ void sim_state_init(void) {
     g_sim.cfg.plant.dead_time_ms = 0.0f;
     g_sim.cfg.act_inject = 1;
     g_sim.cfg.act_absorb = 1;
+    g_sim.cfg.act_min = -100.0f;
+    g_sim.cfg.act_max = 100.0f;
     g_sim.cfg.running = 0;
     g_sim.rt.time_s = 0.0f;
     g_sim.rt.setpoint = g_sim.cfg.setpoint;

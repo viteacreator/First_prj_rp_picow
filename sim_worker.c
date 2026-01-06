@@ -9,28 +9,46 @@
 #define SIM_DT_S 0.01f
 #define DEAD_TIME_BUFFER 128
 
-/** Map controller output into actuator output based on allowed directions. */
-static float actuator_apply(float u, int inject, int absorb) {
-    /* Inject-only: clamp negative commands to zero. */
-    if (inject && !absorb) {
-        return (u > 0.0f) ? u : 0.0f;
-    }
-    /* Absorb-only: clamp positive commands to zero. */
-    if (!inject && absorb) {
-        return (u < 0.0f) ? u : 0.0f;
-    }
-    /* Bidirectional: pass through. */
-    if (inject && absorb) {
-        return u;
-    }
+/** Map controller output into actuator output based on mode and limits. */
+static float actuator_apply(float u, int inject, int absorb, float min_out, float max_out) {
     /* Disabled actuator: no effect on plant. */
-    return 0.0f;
+    if (!inject && !absorb) {
+        return 0.0f;
+    }
+
+    /* Force limits to be sane. */
+    if (min_out > max_out) {
+        float tmp = min_out;
+        min_out = max_out;
+        max_out = tmp;
+    }
+
+    /* Inject-only: disallow negative output. */
+    if (inject && !absorb) {
+        if (min_out < 0.0f) min_out = 0.0f;
+        if (max_out < 0.0f) max_out = 0.0f;
+    }
+
+    /* Absorb-only: disallow positive output. */
+    if (!inject && absorb) {
+        if (max_out > 0.0f) max_out = 0.0f;
+        if (min_out > 0.0f) min_out = 0.0f;
+    }
+
+    if (min_out > max_out) {
+        min_out = max_out;
+    }
+
+    if (u < min_out) return min_out;
+    if (u > max_out) return max_out;
+    return u;
 }
 
 /** Core 1 entry: simulate plant dynamics and apply PID in real time. */
 static void core1_main(void) {
     pid_t pid;
-    pid_init(&pid, 2.0f, 0.5f, 0.1f, 0.0f, 100.0f);
+    /* PID is unconstrained; actuator applies the physical limits. */
+    pid_init(&pid, 2.0f, 0.5f, 0.1f, 1.0f, -1.0f);
 
     second_order_state_t second_state = {0};
 
@@ -59,7 +77,8 @@ static void core1_main(void) {
 
         if (reset_req) {
             LOGI("SIM reset requested\n");
-            pid_init(&pid, cfg.pid.kp, cfg.pid.ki, cfg.pid.kd, 0.0f, 100.0f);
+            /* Reset PID state without enforcing output limits. */
+            pid_init(&pid, cfg.pid.kp, cfg.pid.ki, cfg.pid.kd, 1.0f, -1.0f);
             second_state.state1 = 0.0f;
             second_state.state2 = 0.0f;
             y = 25.0f;
@@ -79,8 +98,8 @@ static void core1_main(void) {
         } else {
             u = 0.0f;
         }
-        /* Apply actuator limits based on inject/absorb selection. */
-        u1 = actuator_apply(u, cfg.act_inject, cfg.act_absorb);
+        /* Apply actuator direction and limits based on UI selection. */
+        u1 = actuator_apply(u, cfg.act_inject, cfg.act_absorb, cfg.act_min, cfg.act_max);
 
         int desired_len = (int)(cfg.plant.dead_time_ms / (SIM_DT_S * 1000.0f));
         if (desired_len < 0) desired_len = 0;
