@@ -35,7 +35,10 @@
         }
 
         button:active {
-            background: #fff;
+            background: #f5f2e9;
+        }
+        button.is-active {
+            background: #f5f2e9;
         }
 
         input:not([type="checkbox"]),
@@ -96,6 +99,38 @@
 
 <body>
     <h2>Pico W PID Simulator (UI Test)</h2>
+    <div id="help_panel" style="display:none;border:2px solid #222;background:#fff;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:bold;margin-bottom:8px;">Upper you can see a diagram of an automatic system in a closed-loop feedback.</div>
+        <div style="font-weight:bold;margin-top:10px;">Blocks and signals</div>
+        <div style="margin-top:6px;"><b>Setpoint reg</b>: Here you set the value you want the system to achieve in the process.</div>
+        <div style="margin-top:4px;"><b>Summing junction (comparator)</b>: Does a simple operation to close the negative feedback loop: e(t) = r(t) - y1(t)</div>
+        <div style="margin-top:4px;"><b>PID controller</b>: The PID mathematical algorithm with e(t) as the input signal and u(t) as the result (controller output).</div>
+        <div style="margin-top:6px;"><b>Inputs you can set (tuning parameters)</b>:</div>
+        <div style="margin-left:14px;">Kp - proportional gain (how strongly the controller reacts to the current error)</div>
+        <div style="margin-left:14px;">Ki - integral gain (how strongly it reacts to accumulated error over time)</div>
+        <div style="margin-left:14px;">Kd - derivative gain (how strongly it reacts to how fast the error is changing)</div>
+        <div style="margin-left:14px;">dT - controller time step / sampling period used by the PID calculations</div>
+        <div style="margin-top:6px;"><b>Actuator / FCE</b>: As we simulate a real system, understand that an actuator can:</div>
+        <div style="margin-left:14px;">Inject energy - actuator can only add energy to the system (e.g., heater in an oven)</div>
+        <div style="margin-left:14px;">Absorb energy - actuator can only remove energy from the system (e.g., refrigerator)</div>
+        <div style="margin-left:14px;">Or both, for example a motor drive which can accelerate and brake the motor.</div>
+        <div style="margin-top:4px;">Also, a real actuator cannot inject or absorb infinite energy into/from the system. This is why you can set:</div>
+        <div style="margin-left:14px;">Min / Max - clamps the actuator output to a allowed range (you can leave it as it is: -100...100, e.g. % of power, PWM, Current, etc)</div>
+        <div style="margin-top:6px;"><b>Plant / Process</b>: This is the system being controlled (the "process"). More exactly, it is the mathematical equation that describes it.</div>
+        <div style="margin-top:4px;">You can choose the mathematical model: First order or Second order, and set parameters:</div>
+        <div style="margin-left:14px;">Gain (K) - overall plant gain</div>
+        <div style="margin-left:14px;">Tau (tau) - time constant (first-order model)</div>
+        <div style="margin-left:14px;">Wn (wn) - natural frequency (second-order model)</div>
+        <div style="margin-left:14px;">Zeta (zeta) - damping ratio (second-order model)</div>
+        <div style="margin-left:14px;">Dead (ms) - dead time / input delay before the plant responds</div>
+        <div style="margin-top:6px;"><b>Sensor</b>: Measures the plant output for feedback (often modeled as gain = 1).</div>
+        <div style="font-weight:bold;margin-top:10px;">Controls (buttons)</div>
+        <div style="margin-left:14px;">Apply - send/use the current settings (parameters) in the simulation</div>
+        <div style="margin-left:14px;">Start - starts running the control loop (run setpoint + PID controller)</div>
+        <div style="margin-left:14px;">Stop - stops the control loop (stop setpoint + PID controller only); rest of the system is still simulated, as in real life</div>
+        <div style="margin-left:14px;">Reset - resets the simulation state (time, internal states, PID internal data, etc.)</div>
+        <div style="margin-left:14px;">Clear Plot - clears the plotted history (graph only)</div>
+    </div>
     <div class="card">
         <div><b>Status</b>: <span id="running">STOPPED</span></div>
     </div>
@@ -164,12 +199,12 @@
                             <option value="1" selected>Second order</option>
                         </select>
                     </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <div>Gain <input id="gain" value="2.0" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div>Tau <input id="tau" value="8.0" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div>Wn <input id="wn" value="1.2" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div>Zeta <input id="zeta" value="0.7" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div>Dead <input id="dead" value="0" style="width:50px;padding:6px;margin:2px;" /> ms</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <div id="row_gain" style="display:inline-flex;align-items:center;gap:6px;">Gain <input id="gain" value="2.0" style="width:50px;padding:6px;margin:2px;" /></div>
+                        <div id="row_tau" style="display:inline-flex;align-items:center;gap:6px;">Tau <input id="tau" value="8.0" style="width:50px;padding:6px;margin:2px;" /></div>
+                        <div id="row_wn" style="display:inline-flex;align-items:center;gap:6px;">Wn <input id="wn" value="1.2" style="width:50px;padding:6px;margin:2px;" /></div>
+                        <div id="row_zeta" style="display:inline-flex;align-items:center;gap:6px;">Zeta <input id="zeta" value="0.7" style="width:50px;padding:6px;margin:2px;" /></div>
+                        <div id="row_dead" style="display:inline-flex;align-items:center;gap:6px;">Dead <input id="dead" value="0" style="width:50px;padding:6px;margin:2px;" /> ms</div>
                     </div>
                     <div style="border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;">
                         <div id="tf_text">Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70</div>
@@ -188,7 +223,15 @@
             <line id="fb_up_to_sum" class="diag-line" x1="230" y1="355" x2="230" y2="208" marker-end="url(#arrow)" /> <text class="diag-text" x="246" y="228">y1(t)</text>
         </svg>
         <div class="controls">
-            <div>Time window (s) <input id="window" value="100"></div> <button>Apply</button> <button>Start</button> <button>Stop</button> <button>Reset</button> <button>Clear Plot</button>
+            <div>Time window (s) <input id="window" type="number" min="10" step="10" value="100"></div>
+            <div>Plot W <input id="plot_w" type="number" min="300" step="10" value="1400"></div>
+            <div>Plot H <input id="plot_h" type="number" min="200" step="10" value="700"></div>
+            <button>Apply</button>
+            <button id="btn_start" onclick="setRunButtonsState(true)">Start</button>
+            <button id="btn_stop" onclick="setRunButtonsState(false)">Stop</button>
+            <button>Reset</button>
+            <button>Clear Plot</button>
+            <button id="btn_help" onclick="toggleHelp()">Help</button>
         </div>
     </div>
     <div class="card">
@@ -200,17 +243,25 @@
         </div>
     </div>
     <div class="card">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-start;">
-            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_sp" checked style="margin:0;">Setpoint</label>
-            <input type="color" id="color_sp" value="#000000" style="margin:0;width:28px;height:20px;">
-            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u" checked style="margin:0;">Control u</label>
-            <input type="color" id="color_u" value="#9b9b9b" style="margin:0;width:28px;height:20px;">
-            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u1" checked style="margin:0;">Actuator u1</label>
-            <input type="color" id="color_u1" value="#6abf4b" style="margin:0;width:28px;height:20px;">
-            <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_y" checked style="margin:0;">Output y</label>
-            <input type="color" id="color_y" value="#b00000" style="margin:0;width:28px;height:20px;">
+        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:flex-start;">
+            <div style="display:inline-flex;gap:8px;align-items:center;">
+                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_sp" checked style="margin:0;">Setpoint</label>
+                <input type="color" id="color_sp" value="#000000" style="margin:0;width:28px;height:20px;">
+            </div>
+            <div style="display:inline-flex;gap:8px;align-items:center;">
+                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u" checked style="margin:0;">Control u</label>
+                <input type="color" id="color_u" value="#9b9b9b" style="margin:0;width:28px;height:20px;">
+            </div>
+            <div style="display:inline-flex;gap:8px;align-items:center;">
+                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u1" checked style="margin:0;">Actuator u1</label>
+                <input type="color" id="color_u1" value="#6abf4b" style="margin:0;width:28px;height:20px;">
+            </div>
+            <div style="display:inline-flex;gap:8px;align-items:center;">
+                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_y" checked style="margin:0;">Output y</label>
+                <input type="color" id="color_y" value="#b00000" style="margin:0;width:28px;height:20px;">
+            </div>
         </div>
-        <canvas id="plot" width="1600" height="600"></canvas>
+        <canvas id="plot" width="1400" height="700"></canvas>
     </div>
     <script>
         /* UI test stub: update transfer function text only. */
@@ -228,7 +279,15 @@
             }
             document.getElementById('tf_text').textContent = tf;
         }
+        function updateModelUI() {
+            var model = document.getElementById('model').value;
+            var firstOrder = (model === '0');
+            document.getElementById('row_tau').style.display = firstOrder ? 'inline-flex' : 'none';
+            document.getElementById('row_wn').style.display = firstOrder ? 'none' : 'inline-flex';
+            document.getElementById('row_zeta').style.display = firstOrder ? 'none' : 'inline-flex';
+        }
         document.getElementById('model').addEventListener('change', updateTF);
+        document.getElementById('model').addEventListener('change', updateModelUI);
         document.getElementById('gain').addEventListener('input', updateTF);
         document.getElementById('tau').addEventListener('input', updateTF);
         document.getElementById('wn').addEventListener('input', updateTF);
@@ -239,12 +298,61 @@
             document.getElementById('color_u1').style.background = document.getElementById('color_u1').value;
             document.getElementById('color_y').style.background = document.getElementById('color_y').value;
         }
+        function setPlotSize() {
+            var c = document.getElementById('plot');
+            var w = parseInt(document.getElementById('plot_w').value, 10);
+            var h = parseInt(document.getElementById('plot_h').value, 10);
+            if (isNaN(w) || w < 300) w = 300;
+            if (isNaN(h) || h < 200) h = 200;
+            c.width = w;
+            c.height = h;
+        }
         document.getElementById('color_sp').addEventListener('input', updateColorPickers);
         document.getElementById('color_u').addEventListener('input', updateColorPickers);
         document.getElementById('color_u1').addEventListener('input', updateColorPickers);
         document.getElementById('color_y').addEventListener('input', updateColorPickers);
+        document.getElementById('plot_w').addEventListener('change', setPlotSize);
+        document.getElementById('plot_h').addEventListener('change', setPlotSize);
+        function toggleHelp() {
+            var p = document.getElementById('help_panel');
+            if (p) {
+                var open = (p.style.display === 'none' || p.style.display === '');
+                p.style.display = open ? 'block' : 'none';
+                setHelpButtonState(open);
+            }
+        }
+        function setHelpButtonState(open) {
+            var b = document.getElementById('btn_help');
+            if (b) {
+                if (open) {
+                    b.classList.add('is-active');
+                } else {
+                    b.classList.remove('is-active');
+                }
+            }
+        }
+        function setRunButtonsState(running) {
+            var startBtn = document.getElementById('btn_start');
+            var stopBtn = document.getElementById('btn_stop');
+            if (startBtn) {
+                if (running) {
+                    startBtn.classList.add('is-active');
+                } else {
+                    startBtn.classList.remove('is-active');
+                }
+            }
+            if (stopBtn) {
+                if (running) {
+                    stopBtn.classList.remove('is-active');
+                } else {
+                    stopBtn.classList.add('is-active');
+                }
+            }
+        }
         updateTF();
         updateColorPickers();
+        updateModelUI();
+        setPlotSize();
     </script>
 </body>
 
