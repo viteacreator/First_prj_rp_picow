@@ -225,6 +225,7 @@ static void build_page(char *out, size_t out_len) {
         ".diag-line{stroke:#222;stroke-width:2;fill:none;}"
         ".diag-text{font-size:12px;fill:#222;}"
         ".diag-title{font-size:12px;fill:#222;font-weight:bold;}"
+        ".schematic-shift{margin-left:140px;}"
         "</style></head><body>"
         "<h2>Pico W PID Simulator</h2>"
         "<div id='help_panel' style='display:none;border:2px solid #222;background:#fff;padding:12px;margin-bottom:12px;'>"
@@ -262,6 +263,7 @@ static void build_page(char *out, size_t out_len) {
         
         "<div class='card'><div><b>Status</b>: <span id='running'>STOPPED</span></div></div>"
         "<div class='card'>"
+        "<div class='schematic-shift'>"
         "<svg id='control_diagram' width='1600' height='420' viewBox='0 0 1600 420'>"
         "<defs>"
         "<marker id='arrow' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'>"
@@ -344,6 +346,7 @@ static void build_page(char *out, size_t out_len) {
         "<line id='fb_up_to_sum' class='diag-line' x1='230' y1='355' x2='230' y2='208' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='246' y='228'>y1(t)</text>"
         "</svg>"
+        "</div>"
         "<div class='controls'>"
         "<div>Time window (s) <input id='window' type='number' min='10' step='10' value='100' onchange='setWindow();saveSettings()'></div>"
         "<div>Plot W <input id='plot_w' type='number' min='300' step='10' value='1400' onchange='setPlotSize();saveSettings()'></div>"

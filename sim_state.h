@@ -25,6 +25,9 @@ typedef struct {
 
 typedef struct {
     float setpoint;
+    float master_setpoint;
+    int use_master_setpoint;
+    int allow_sens_signal;
     pid_params_t pid;
     plant_params_t plant;
     int act_inject;
@@ -53,3 +56,9 @@ extern sim_state_t g_sim;
 
 /** Initialize shared simulation state and its lock. */
 void sim_state_init(void);
+/** Set master setpoint from external controller. */
+void master_setpoint_set(float m_setpoint);
+/** Select whether to use master setpoint as active reference. */
+void sim_state_set_use_master_setpoint(int use_master);
+/** Enable/disable sensor feedback signal in the control loop. */
+void sim_state_set_allow_sens_signal(int allow);

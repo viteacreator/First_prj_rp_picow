@@ -8,6 +8,9 @@ sim_state_t g_sim;
 void sim_state_init(void) {
     critical_section_init(&g_sim.lock);
     g_sim.cfg.setpoint = 200.0f;
+    g_sim.cfg.master_setpoint = 0.0f;
+    g_sim.cfg.use_master_setpoint = 0;
+    g_sim.cfg.allow_sens_signal = 1;
     g_sim.cfg.pid.kp = 2.0f;
     g_sim.cfg.pid.ki = 0.5f;
     g_sim.cfg.pid.kd = 0.1f;
@@ -28,4 +31,25 @@ void sim_state_init(void) {
     g_sim.rt.actuator = 0.0f;
     g_sim.rt.output = 25.0f;
     g_sim.reset_requested = 0;
+}
+
+/** Set master setpoint value from external controller. */
+void master_setpoint_set(float m_setpoint) {
+    critical_section_enter_blocking(&g_sim.lock);
+    g_sim.cfg.master_setpoint = m_setpoint;
+    critical_section_exit(&g_sim.lock);
+}
+
+/** Select whether the master setpoint drives the control loop. */
+void sim_state_set_use_master_setpoint(int use_master) {
+    critical_section_enter_blocking(&g_sim.lock);
+    g_sim.cfg.use_master_setpoint = use_master ? 1 : 0;
+    critical_section_exit(&g_sim.lock);
+}
+
+/** Enable/disable sensor feedback signal in the control loop. */
+void sim_state_set_allow_sens_signal(int allow) {
+    critical_section_enter_blocking(&g_sim.lock);
+    g_sim.cfg.allow_sens_signal = allow ? 1 : 0;
+    critical_section_exit(&g_sim.lock);
 }

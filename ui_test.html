@@ -94,6 +94,26 @@
             fill: #222;
             font-weight: bold;
         }
+        .switch-active {
+            fill: #f5f2e9;
+        }
+        .switch-disabled {
+            fill: #ffbaba;
+        }
+        .master-border {
+            fill: #fff;
+            stroke: #777;
+        }
+        .master-box {
+            fill: #f0f0f0;
+            stroke: #777;
+        }
+        .master-text {
+            fill: #777;
+        }
+        .switch-active {
+            fill: #f5f2e9;
+        }
     </style>
 </head>
 
@@ -134,7 +154,8 @@
     <div class="card">
         <div><b>Status</b>: <span id="running">STOPPED</span></div>
     </div>
-    <div class="card"> <svg id="control_diagram" width="1600" height="420" viewBox="0 0 1600 420">
+    <div class="card">
+        <svg id="control_diagram" width="1600" height="420" viewBox="0 0 1600 420">
             <defs>
                 <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
@@ -144,7 +165,20 @@
             <foreignObject x="30" y="172" width="120" height="34">
                 <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;justify-content:center;"> <input id="setpoint" value="200" style="width:80px;" /> </div>
             </foreignObject> <!-- r(t) -->
-            <line id="line_r" class="diag-line" x1="160" y1="180" x2="202" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="168" y="170">r(t)</text> <!-- Summing junction -->
+            <rect id="master_block" class="diag-block master-border" x="20" y="240" width="140" height="140" />
+            <text class="diag-title master-text" x="90" y="265" text-anchor="middle">Master app control</text>
+            <rect id="master_value_box" class="diag-block master-box" x="40" y="290" width="100" height="30" />
+            <text id="master_value" class="diag-text master-text" x="90" y="310" text-anchor="middle">0</text>
+            <polyline id="line_master_to_switch" class="diag-line" points="160,290 215,290 215,205" marker-end="url(#arrow)" />
+            <text class="diag-text" x="165" y="285">m_r(t)</text>
+            <polyline id="line_master_to_sw1_dash" class="diag-line" points="160,310 230,310 230,205" style="stroke:#777;stroke-dasharray:4 3;" />
+            <polyline id="line_master_to_sw2" class="diag-line" points="160,330 315,330 315,305" style="stroke:#777;stroke-dasharray:4 3;" />
+            <line id="line_r" class="diag-line" x1="160" y1="180" x2="200" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="168" y="170">r(t)</text> <!-- Summing junction -->
+            <rect id="pre_block" class="diag-block switch-disabled" x="200" y="155" width="50" height="50" />
+            <text class="diag-text" x="225" y="150" text-anchor="middle">SW1</text>
+            <line id="pre_block_line" class="diag-line" x1="200" y1="180" x2="250" y2="180"></line>
+            <g id="diagram_shift" transform="translate(100 0)">
+            <line id="line_r2" class="diag-line" x1="150" y1="180" x2="202" y2="180" marker-end="url(#arrow)" />
             <circle id="sum_block" class="diag-block" cx="230" cy="180" r="28" /> <text class="diag-text" x="222" y="172">+</text> <text class="diag-text" x="222" y="202">-</text> <!-- e(t) -->
             <line id="line_e" class="diag-line" x1="258" y1="180" x2="290" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="266" y="170">e(t)</text> <!-- PID controller -->
             <rect id="pid_block" class="diag-block" x="290" y="120" width="260" height="120" /> <text class="diag-title" x="420" y="148" text-anchor="middle">PID controller</text> <!-- PID inputs in one row (like reference) -->
@@ -181,9 +215,9 @@
 
                     <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
                         <span>Min</span>
-                        <input id="act_min" value="-100" style="width:50px;padding:6px;margin:2px;" />
+                        <input id="act_min" value="-100" style="width:50px;padding:6px;margin:1px;" />
                         <span>Max</span>
-                        <input id="act_max" value="100" style="width:50px;padding:6px;margin:2px;" />
+                        <input id="act_max" value="100" style="width:50px;padding:6px;margin:1px;" />
                     </div>
 
                 </div>
@@ -211,16 +245,22 @@
                     </div>
                 </div>
             </foreignObject> <!-- y(t) output -->
-            <line id="line_y" class="diag-line" x1="1230" y1="180" x2="1370" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="1380" y="175">y(t)</text> <!-- ========================= External disturbance (above actuator, enters from top) ========================= -->
+            <line id="line_y" class="diag-line" x1="1230" y1="180" x2="1300" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="1300" y="175">y(t)</text> <!-- ========================= External disturbance (above actuator, enters from top) ========================= -->
             <rect id="dist_block" class="diag-block" x="600" y="20" width="220" height="70" /> <text class="diag-title" x="700" y="45" text-anchor="middle">External disturbance</text> <!-- disturbance path: right -> then down into plant top -->
             <line id="line_pd1" class="diag-line" x1="820" y1="55" x2="1060" y2="55" />
             <line id="line_pd2" class="diag-line" x1="1060" y1="55" x2="1060" y2="110" marker-end="url(#arrow)" /> <text class="diag-text" x="1070" y="80">p(t)</text> <!-- ========================= Sensor + feedback loop ========================= -->
             <rect id="sens_block" class="diag-block" x="600" y="320" width="220" height="70" /> <text class="diag-title" x="705" y="342" text-anchor="middle">Sensor</text>
             <rect class="diag-block" x="698" y="352" width="22" height="22" /> <text class="diag-text" x="709" y="368" text-anchor="middle">1</text> <!-- Branch from y(t) line down -->
-            <line id="fb_down" class="diag-line" x1="1320" y1="180" x2="1320" y2="355" /> <!-- Into sensor from right (arrow points left) -->
-            <line id="fb_into_sensor" class="diag-line" x1="1320" y1="355" x2="820" y2="355" marker-end="url(#arrow)" /> <!-- Out of sensor to the left -->
+            <line id="fb_down" class="diag-line" x1="1260" y1="180" x2="1260" y2="355" /> <!-- Into sensor from right (arrow points left) -->
+            <line id="fb_into_sensor" class="diag-line" x1="1260" y1="355" x2="820" y2="355" marker-end="url(#arrow)" /> <!-- Out of sensor to the left -->
             <line id="fb_out_sensor" class="diag-line" x1="600" y1="355" x2="230" y2="355" /> <!-- Up into summing junction -->
-            <line id="fb_up_to_sum" class="diag-line" x1="230" y1="355" x2="230" y2="208" marker-end="url(#arrow)" /> <text class="diag-text" x="246" y="228">y1(t)</text>
+            <rect id="fb_switch" class="diag-block" x="205" y="260" width="50" height="50" />
+            <text class="diag-text" x="275" y="290" text-anchor="middle">SW2</text>
+            <line id="fb_switch_line" class="diag-line" x1="230" y1="260" x2="230" y2="310" />
+            <text id="fb_switch_text" class="diag-text" x="230" y="286" text-anchor="middle" style="display:none;">0</text>
+            <line id="fb_up_to_sw2" class="diag-line" x1="230" y1="260" x2="230" y2="208" marker-end="url(#arrow)" /> <text class="diag-text" x="246" y="228">y1(t)</text>
+            <line id="fb_up_to_sum" class="diag-line" x1="230" y1="355" x2="230" y2="310" />
+            </g>
         </svg>
         <div class="controls">
             <div>Time window (s) <input id="window" type="number" min="10" step="10" value="100"></div>
@@ -264,6 +304,9 @@
         <canvas id="plot" width="1400" height="700"></canvas>
     </div>
     <script>
+        var useMasterSetpoint = false;
+        var allowSensSignal = true;
+
         /* UI test stub: update transfer function text only. */
         function updateTF() {
             var model = document.getElementById('model').value;
@@ -349,10 +392,65 @@
                 }
             }
         }
+        function setSwitchLine(useMaster) {
+            var line = document.getElementById('pre_block_line');
+            var block = document.getElementById('pre_block');
+            if (!line || !block) return;
+            if (useMaster) {
+                line.setAttribute('x1', '215');
+                line.setAttribute('y1', '205');
+                line.setAttribute('x2', '250');
+                line.setAttribute('y2', '180');
+                block.classList.add('switch-disabled');
+                block.classList.remove('switch-active');
+            } else {
+                line.setAttribute('x1', '200');
+                line.setAttribute('y1', '180');
+                line.setAttribute('x2', '250');
+                line.setAttribute('y2', '180');
+                block.classList.remove('switch-disabled');
+                block.classList.add('switch-active');
+            }
+            useMasterSetpoint = useMaster;
+        }
+        function toggleSetpointSource() {
+            setSwitchLine(!useMasterSetpoint);
+        }
+        function setFeedbackSwitch(allow) {
+            var line = document.getElementById('fb_switch_line');
+            var text = document.getElementById('fb_switch_text');
+            var block = document.getElementById('fb_switch');
+            if (!line || !text || !block) return;
+            if (allow) {
+                line.style.display = '';
+                text.style.display = 'none';
+                block.classList.remove('switch-disabled');
+                block.classList.add('switch-active');
+            } else {
+                line.style.display = 'none';
+                text.style.display = '';
+                block.classList.remove('switch-active');
+                block.classList.add('switch-disabled');
+            }
+            allowSensSignal = allow;
+        }
+        function toggleFeedbackSwitch() {
+            setFeedbackSwitch(!allowSensSignal);
+        }
         updateTF();
         updateColorPickers();
         updateModelUI();
         setPlotSize();
+        setSwitchLine(useMasterSetpoint);
+        setFeedbackSwitch(allowSensSignal);
+        var switchBlock = document.getElementById('pre_block');
+        if (switchBlock) {
+            switchBlock.addEventListener('click', toggleSetpointSource);
+        }
+        var feedbackSwitch = document.getElementById('fb_switch');
+        if (feedbackSwitch) {
+            feedbackSwitch.addEventListener('click', toggleFeedbackSwitch);
+        }
     </script>
 </body>
 

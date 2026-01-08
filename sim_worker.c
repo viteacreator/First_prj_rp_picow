@@ -91,9 +91,11 @@ static void core1_main(void) {
         pid.ki = cfg.pid.ki;
         pid.kd = cfg.pid.kd;
 
-        float setpoint = cfg.running ? cfg.setpoint : 0.0f;
+        float active_setpoint = cfg.use_master_setpoint ? cfg.master_setpoint : cfg.setpoint;
+        float setpoint = cfg.running ? active_setpoint : 0.0f;
         if (cfg.running) {
-            float error = setpoint - y;
+            float feedback = cfg.allow_sens_signal ? y : 0.0f;
+            float error = setpoint - feedback;
             u = pid_step(&pid, error, SIM_DT_S);
         } else {
             u = 0.0f;
