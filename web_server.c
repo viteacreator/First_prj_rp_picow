@@ -140,6 +140,8 @@ static void apply_config_from_query(const char *path) {
     }
     if (get_query_int(path, "act_inject", &ivalue)) g_sim.cfg.act_inject = ivalue ? 1 : 0;
     if (get_query_int(path, "act_absorb", &ivalue)) g_sim.cfg.act_absorb = ivalue ? 1 : 0;
+    if (get_query_int(path, "use_master", &ivalue)) g_sim.cfg.use_master_setpoint = ivalue ? 1 : 0;
+    if (get_query_int(path, "allow_sens", &ivalue)) g_sim.cfg.allow_sens_signal = ivalue ? 1 : 0;
     if (get_query_int(path, "run", &ivalue)) g_sim.cfg.running = ivalue ? 1 : 0;
     if (get_query_int(path, "reset", &ivalue) && ivalue) g_sim.reset_requested = 1;
 
@@ -169,6 +171,9 @@ static void build_state_json(char *out, size_t out_len) {
         "\"running\":%d,"
         "\"setpoint\":%.2f,"
         "\"setpoint_cfg\":%.2f,"
+        "\"master_setpoint\":%.2f,"
+        "\"use_master\":%d,"
+        "\"allow_sens\":%d,"
         "\"kp\":%.3f,"
         "\"ki\":%.3f,"
         "\"kd\":%.3f,"
@@ -192,6 +197,9 @@ static void build_state_json(char *out, size_t out_len) {
         cfg.running,
         rt.setpoint,
         cfg.setpoint,
+        cfg.master_setpoint,
+        cfg.use_master_setpoint,
+        cfg.allow_sens_signal,
         cfg.pid.kp,
         cfg.pid.ki,
         cfg.pid.kd,
@@ -481,6 +489,7 @@ static void build_app_js(char *out, size_t out_len) {
         "if(s.act_absorb!==undefined)q('act_absorb').checked=!!s.act_absorb;"
         "updateColorPickers();"
         "updateActuatorModeUI();"
+        "updateModelUI();"
         "setWindow();setPlotSize();"
         "return true;}catch(e){return false;}"
         "}"
@@ -554,7 +563,11 @@ static void build_app_js(char *out, size_t out_len) {
         "}"
         "useMasterSetpoint=useMaster;"
         "}"
-        "function toggleSetpointSource(){setSwitchLine(!useMasterSetpoint)}"
+        "function toggleSetpointSource(){"
+        "var next=!useMasterSetpoint;"
+        "setSwitchLine(next);"
+        "api('/api/set?use_master='+(next?1:0),updateUI);"
+        "}"
         "function setFeedbackSwitch(allow){"
         "var line=q('fb_switch_line');var text=q('fb_switch_text');var block=q('fb_switch');"
         "if(!line||!text||!block)return;"
@@ -565,7 +578,11 @@ static void build_app_js(char *out, size_t out_len) {
         "}"
         "allowSensSignal=allow;"
         "}"
-        "function toggleFeedbackSwitch(){setFeedbackSwitch(!allowSensSignal)}"
+        "function toggleFeedbackSwitch(){"
+        "var next=!allowSensSignal;"
+        "setFeedbackSwitch(next);"
+        "api('/api/set?allow_sens='+(next?1:0),updateUI);"
+        "}"
         "/* Sync incoming state into UI fields and plotting buffers. */"
         "function updateUI(d){"
         "if(!d)return;"
@@ -577,6 +594,9 @@ static void build_app_js(char *out, size_t out_len) {
         "q('output').textContent=d.output.toFixed(2);"
         "q('control').textContent=d.control.toFixed(3);"
         "q('actuator').textContent=d.actuator.toFixed(3);"
+        "if(q('master_value'))q('master_value').textContent=d.master_setpoint.toFixed(2);"
+        "useMasterSetpoint=!!d.use_master;"
+        "allowSensSignal=!!d.allow_sens;"
         "if(!synced){"
         "if(!loadSettings()){"
         "q('setpoint').value=d.setpoint_cfg.toFixed(2);"
@@ -601,6 +621,8 @@ static void build_app_js(char *out, size_t out_len) {
         "sp.push(d.setpoint);y.push(d.output);u.push(d.control);u1.push(d.actuator);"
         "if(sp.length>hist){sp.shift();y.shift();u.shift();u1.shift();}"
         "updateActuatorModeUI();"
+        "setSwitchLine(useMasterSetpoint);"
+        "setFeedbackSwitch(allowSensSignal);"
         "draw();}"
         "/* Build a readable transfer function string. */"
         "function transferText(d){"
@@ -678,6 +700,7 @@ static void build_app_js(char *out, size_t out_len) {
         "if(q('show_u1').checked)plot(u1,q('color_u1').value||'#6abf4b');"
         "if(q('show_y').checked)plot(y,q('color_y').value||'#b00');}"
         "setWindow();setPlotSize();"
+        "updateModelUI();"
         "setSwitchLine(useMasterSetpoint);setFeedbackSwitch(allowSensSignal);"
         "var switchBlock=q('pre_block');if(switchBlock){switchBlock.addEventListener('click',toggleSetpointSource);}"
         "var feedbackSwitch=q('fb_switch');if(feedbackSwitch){feedbackSwitch.addEventListener('click',toggleFeedbackSwitch);}"

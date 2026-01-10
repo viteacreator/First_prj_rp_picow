@@ -57,9 +57,23 @@ extern sim_state_t g_sim;
 
 /** Initialize shared simulation state and its lock. */
 void sim_state_init(void);
+/** Set operator (UI) setpoint. */
+void sim_state_set_setpoint(float setpoint);
+/** Get operator (UI) setpoint. */
+float sim_state_get_setpoint(void);
 /** Set master setpoint from external controller. */
 void master_setpoint_set(float m_setpoint);
+/** Get master setpoint from external controller. */
+float master_setpoint_get(void);
 /** Select whether to use master setpoint as active reference. */
 void sim_state_set_use_master_setpoint(int use_master);
+/** Get whether master setpoint is active. */
+int sim_state_get_use_master_setpoint(void);
 /** Enable/disable sensor feedback signal in the control loop. */
 void sim_state_set_allow_sens_signal(int allow);
+/** Get whether sensor feedback is enabled. */
+int sim_state_get_allow_sens_signal(void);
+/** Update PID parameters from external controller. */
+void sim_state_set_pid(const pid_params_t *pid);
+/** Read current PID parameters. */
+pid_params_t sim_state_get_pid(void);
