@@ -273,7 +273,7 @@ static void build_page(char *out, size_t out_len) {
 "<div style='margin-left:14px;'>Tau (tau) - time constant (first-order model)</div>"
 "<div style='margin-left:14px;'>Wn (wn) - natural frequency (second-order model)</div>"
 "<div style='margin-left:14px;'>Zeta (zeta) - damping ratio (second-order model)</div>"
-"<div style='margin-left:14px;'>Dead (ms) - dead time / input delay before the plant responds</div>"
+"<div style='margin-left:14px;'>Dead (ms) - dead time / input delay before the plant responds (use a multiple of dT for exact timing)</div>"
 "<div style='margin-top:6px;'><b>Sensor</b>: Measures the plant output for feedback (often modeled as gain = 1).</div>"
 "<div style='font-weight:bold;margin-top:10px;'>Controls (buttons)</div>"
 "<div style='margin-left:14px;'>Apply - send/use the current settings (parameters) in the simulation</div>"
