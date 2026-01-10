@@ -81,10 +81,12 @@ static void apply_config_from_query(const char *path) {
     const float max_wn = 10.0f;
     const float min_zeta = 0.0f;
     const float max_zeta = 2.0f;
-    const float min_dead = 0.0f;
-    const float max_dead = 5000.0f;
+    const int min_dead = 0;
+    const int max_dead = 2560;
     const float min_act = -1000.0f;
     const float max_act = 1000.0f;
+    const int min_dt = 1;
+    const int max_dt = 1000;
 
     critical_section_enter_blocking(&g_sim.lock);
 
@@ -92,6 +94,11 @@ static void apply_config_from_query(const char *path) {
     if (get_query_float(path, "kp", &value)) g_sim.cfg.pid.kp = value;
     if (get_query_float(path, "ki", &value)) g_sim.cfg.pid.ki = value;
     if (get_query_float(path, "kd", &value)) g_sim.cfg.pid.kd = value;
+    if (get_query_int(path, "dt", &ivalue)) {
+        if (ivalue < min_dt) ivalue = min_dt;
+        if (ivalue > max_dt) ivalue = max_dt;
+        g_sim.cfg.dt_ms = ivalue;
+    }
     if (get_query_float(path, "gain", &value)) {
         if (value < min_gain) value = min_gain;
         if (value > max_gain) value = max_gain;
@@ -112,10 +119,10 @@ static void apply_config_from_query(const char *path) {
         if (value > max_zeta) value = max_zeta;
         g_sim.cfg.plant.zeta = value;
     }
-    if (get_query_float(path, "dead", &value)) {
-        if (value < min_dead) value = min_dead;
-        if (value > max_dead) value = max_dead;
-        g_sim.cfg.plant.dead_time_ms = value;
+    if (get_query_int(path, "dead", &ivalue)) {
+        if (ivalue < min_dead) ivalue = min_dead;
+        if (ivalue > max_dead) ivalue = max_dead;
+        g_sim.cfg.plant.dead_time_ms = ivalue;
     }
     if (get_query_float(path, "act_min", &value)) {
         if (value < min_act) value = min_act;
@@ -165,12 +172,13 @@ static void build_state_json(char *out, size_t out_len) {
         "\"kp\":%.3f,"
         "\"ki\":%.3f,"
         "\"kd\":%.3f,"
+        "\"dt\":%d,"
         "\"model\":%d,"
         "\"gain\":%.2f,"
         "\"tau\":%.2f,"
         "\"wn\":%.2f,"
         "\"zeta\":%.2f,"
-        "\"dead\":%.1f,"
+        "\"dead\":%d,"
         "\"time\":%.2f,"
         "\"control\":%.3f,"
         "\"actuator\":%.3f,"
@@ -187,6 +195,7 @@ static void build_state_json(char *out, size_t out_len) {
         cfg.pid.kp,
         cfg.pid.ki,
         cfg.pid.kd,
+        cfg.dt_ms,
         (int)cfg.plant.model,
         cfg.plant.gain,
         cfg.plant.tau,
@@ -225,11 +234,16 @@ static void build_page(char *out, size_t out_len) {
         ".diag-line{stroke:#222;stroke-width:2;fill:none;}"
         ".diag-text{font-size:12px;fill:#222;}"
         ".diag-title{font-size:12px;fill:#222;font-weight:bold;}"
+        ".switch-active{fill:#f5f2e9;}"
+        ".switch-disabled{fill:#ffbaba;}"
+        ".master-border{fill:#fff;stroke:#777;}"
+        ".master-box{fill:#f0f0f0;stroke:#777;}"
+        ".master-text{fill:#777;}"
         ".schematic-shift{margin-left:140px;}"
         "</style></head><body>"
         "<h2>Pico W PID Simulator</h2>"
         "<div id='help_panel' style='display:none;border:2px solid #222;background:#fff;padding:12px;margin-bottom:12px;'>"
-"<div style='font-weight:bold;margin-bottom:8px;'>Upper you can see a diagram of an automatic system in a closed-loop feedback.</div>"
+"<div style='font-weight:bold;margin-bottom:8px;'>On this page you can see a diagram of an automatic system in a closed-loop feedback.</div>"
 "<div style='font-weight:bold;margin-top:10px;'>Blocks and signals</div>"
 "<div style='margin-top:6px;'><b>Setpoint reg</b>: Here you set the value you want the system to achieve in the process.</div>"
 "<div style='margin-top:4px;'><b>Summing junction (comparator)</b>: Does a simple operation to close the negative feedback loop: e(t) = r(t) - y1(t)</div>"
@@ -238,7 +252,7 @@ static void build_page(char *out, size_t out_len) {
 "<div style='margin-left:14px;'>Kp - proportional gain (how strongly the controller reacts to the current error)</div>"
 "<div style='margin-left:14px;'>Ki - integral gain (how strongly it reacts to accumulated error over time)</div>"
 "<div style='margin-left:14px;'>Kd - derivative gain (how strongly it reacts to how fast the error is changing)</div>"
-"<div style='margin-left:14px;'>dT - controller time step / sampling period used by the PID calculations</div>"
+"<div style='margin-left:14px;'>dT (ms) - controller time step / sampling period used by the PID calculations</div>"
 "<div style='margin-top:6px;'><b>Actuator / FCE</b>: As we simulate a real system, understand that an actuator can:</div>"
 "<div style='margin-left:14px;'>Inject energy - actuator can only add energy to the system (e.g., heater in an oven)</div>"
 "<div style='margin-left:14px;'>Absorb energy - actuator can only remove energy from the system (e.g., refrigerator)</div>"
@@ -257,13 +271,12 @@ static void build_page(char *out, size_t out_len) {
 "<div style='margin-left:14px;'>Apply - send/use the current settings (parameters) in the simulation</div>"
 "<div style='margin-left:14px;'>Start - starts running the control loop (run setpoint + PID controller)</div>"
 "<div style='margin-left:14px;'>Stop - stops the control loop (stop setpoint + PID controller only); rest of the system is still simulated, as in real life</div>"
-"<div style='margin-left:14px;'>Reset - resets the simulation state (time, internal states, PID internal data, etc.)</div>"
+"<div style='margin-left:14px;'>Reset - resets the PID internal state and disconnects the setpoint from r(t)</div>"
 "<div style='margin-left:14px;'>Clear Plot - clears the plotted history (graph only)</div>"
 "</div>"
         
         "<div class='card'><div><b>Status</b>: <span id='running'>STOPPED</span></div></div>"
         "<div class='card'>"
-        "<div class='schematic-shift'>"
         "<svg id='control_diagram' width='1600' height='420' viewBox='0 0 1600 420'>"
         "<defs>"
         "<marker id='arrow' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'>"
@@ -276,8 +289,21 @@ static void build_page(char *out, size_t out_len) {
         "<div xmlns='http://www.w3.org/1999/xhtml' style='display:flex;justify-content:center;'>"
         "<input id='setpoint' value='200' style='width:80px;'/>"
         "</div></foreignObject>"
-        "<line id='line_r' class='diag-line' x1='160' y1='180' x2='202' y2='180' marker-end='url(#arrow)'/>"
+        "<rect id='master_block' class='diag-block master-border' x='20' y='240' width='140' height='140'/>"
+        "<text class='diag-title master-text' x='90' y='265' text-anchor='middle'>Master app control</text>"
+        "<rect id='master_value_box' class='diag-block master-box' x='40' y='290' width='100' height='30'/>"
+        "<text id='master_value' class='diag-text master-text' x='90' y='310' text-anchor='middle'>0</text>"
+        "<polyline id='line_master_to_switch' class='diag-line' points='160,290 215,290 215,205' marker-end='url(#arrow)'/>"
+        "<text class='diag-text' x='165' y='285'>m_r(t)</text>"
+        "<polyline id='line_master_to_sw1_dash' class='diag-line' points='160,310 230,310 230,205' style='stroke:#777;stroke-dasharray:4 3;'/>"
+        "<polyline id='line_master_to_sw2' class='diag-line' points='160,330 315,330 315,305' style='stroke:#777;stroke-dasharray:4 3;'/>"
+        "<line id='line_r' class='diag-line' x1='160' y1='180' x2='200' y2='180' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='168' y='170'>r(t)</text>"
+        "<rect id='pre_block' class='diag-block switch-disabled' x='200' y='155' width='50' height='50'/>"
+        "<text class='diag-text' x='225' y='150' text-anchor='middle'>SW1</text>"
+        "<line id='pre_block_line' class='diag-line' x1='200' y1='180' x2='250' y2='180'></line>"
+        "<g id='diagram_shift' transform='translate(100 0)'>"
+        "<line id='line_r2' class='diag-line' x1='150' y1='180' x2='202' y2='180' marker-end='url(#arrow)'/>"
         "<circle id='sum_block' class='diag-block' cx='230' cy='180' r='28'/>"
         "<text class='diag-text' x='222' y='172'>+</text>"
         "<text class='diag-text' x='222' y='202'>-</text>"
@@ -290,7 +316,7 @@ static void build_page(char *out, size_t out_len) {
         "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kp</div><input id='kp' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
         "<div style='display:flex;flex-direction:column;align-items:center;'><div>Ki</div><input id='ki' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
         "<div style='display:flex;flex-direction:column;align-items:center;'><div>Kd</div><input id='kd' value='0.000' style='width:45px;padding:6px;margin:2px;'/></div>"
-        "<div style='display:flex;flex-direction:column;align-items:center;'><div>dT</div><input id='dt' value='0' style='width:30px;padding:6px;margin:2px;'/></div>"
+        "<div style='display:flex;flex-direction:column;align-items:center;'><div>dT (ms)</div><input id='dt' value='10' style='width:36px;padding:6px;margin:2px;'/></div>"
         "</div></foreignObject>"
         "<line id='line_u' class='diag-line' x1='550' y1='180' x2='600' y2='180' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='555' y='170'>u(t)</text>"
@@ -329,8 +355,8 @@ static void build_page(char *out, size_t out_len) {
         "</div>"
         "<div style='border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;'><div id='tf_text'>Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70</div></div>"
         "</div></foreignObject>"
-        "<line id='line_y' class='diag-line' x1='1230' y1='180' x2='1370' y2='180' marker-end='url(#arrow)'/>"
-        "<text class='diag-text' x='1380' y='175'>y(t)</text>"
+        "<line id='line_y' class='diag-line' x1='1230' y1='180' x2='1300' y2='180' marker-end='url(#arrow)'/>"
+        "<text class='diag-text' x='1300' y='175'>y(t)</text>"
         "<rect id='dist_block' class='diag-block' x='600' y='20' width='220' height='70'/>"
         "<text class='diag-title' x='700' y='45' text-anchor='middle'>External disturbance</text>"
         "<line id='line_pd1' class='diag-line' x1='820' y1='55' x2='1060' y2='55'/>"
@@ -340,13 +366,18 @@ static void build_page(char *out, size_t out_len) {
         "<text class='diag-title' x='705' y='342' text-anchor='middle'>Sensor</text>"
         "<rect class='diag-block' x='698' y='352' width='22' height='22'/>"
         "<text class='diag-text' x='709' y='368' text-anchor='middle'>1</text>"
-        "<line id='fb_down' class='diag-line' x1='1320' y1='180' x2='1320' y2='355'/>"
-        "<line id='fb_into_sensor' class='diag-line' x1='1320' y1='355' x2='820' y2='355' marker-end='url(#arrow)'/>"
+        "<line id='fb_down' class='diag-line' x1='1260' y1='180' x2='1260' y2='355'/>"
+        "<line id='fb_into_sensor' class='diag-line' x1='1260' y1='355' x2='820' y2='355' marker-end='url(#arrow)'/>"
         "<line id='fb_out_sensor' class='diag-line' x1='600' y1='355' x2='230' y2='355'/>"
-        "<line id='fb_up_to_sum' class='diag-line' x1='230' y1='355' x2='230' y2='208' marker-end='url(#arrow)'/>"
+        "<rect id='fb_switch' class='diag-block' x='205' y='260' width='50' height='50'/>"
+        "<text class='diag-text' x='275' y='290' text-anchor='middle'>SW2</text>"
+        "<line id='fb_switch_line' class='diag-line' x1='230' y1='260' x2='230' y2='310'/>"
+        "<text id='fb_switch_text' class='diag-text' x='230' y='286' text-anchor='middle' style='display:none;'>0</text>"
+        "<line id='fb_up_to_sw2' class='diag-line' x1='230' y1='260' x2='230' y2='208' marker-end='url(#arrow)'/>"
         "<text class='diag-text' x='246' y='228'>y1(t)</text>"
+        "<line id='fb_up_to_sum' class='diag-line' x1='230' y1='355' x2='230' y2='310'/>"
+        "</g>"
         "</svg>"
-        "</div>"
         "<div class='controls'>"
         "<div>Time window (s) <input id='window' type='number' min='10' step='10' value='100' onchange='setWindow();saveSettings()'></div>"
         "<div>Plot W <input id='plot_w' type='number' min='300' step='10' value='1400' onchange='setPlotSize();saveSettings()'></div>"
@@ -394,7 +425,7 @@ static void build_page(char *out, size_t out_len) {
 static void build_app_js(char *out, size_t out_len) {
     snprintf(out, out_len,
         "/* Sampling and history buffers for plotting. */"
-        "var sampleMs=200;var windowSec=100;var hist=500;var sp=[],y=[],u=[],u1=[];var synced=false;var tfPending=false;var runPending=false;var currentTime=0;"
+        "var sampleMs=200;var windowSec=100;var hist=500;var sp=[],y=[],u=[],u1=[];var synced=false;var tfPending=false;var runPending=false;var currentTime=0;var useMasterSetpoint=false;var allowSensSignal=true;"
         "function q(id){return document.getElementById(id)}"
         "function api(url,cb){"
         "var x=new XMLHttpRequest();"
@@ -459,6 +490,7 @@ static void build_app_js(char *out, size_t out_len) {
         "+'&kp='+encodeURIComponent(q('kp').value)"
         "+'&ki='+encodeURIComponent(q('ki').value)"
         "+'&kd='+encodeURIComponent(q('kd').value)"
+        "+'&dt='+encodeURIComponent(q('dt').value)"
         "+'&model='+encodeURIComponent(q('model').value)"
         "+'&gain='+encodeURIComponent(q('gain').value)"
         "+'&tau='+encodeURIComponent(q('tau').value)"
@@ -510,6 +542,30 @@ static void build_app_js(char *out, size_t out_len) {
         "if(bs){if(running)bs.classList.add('is-active');else bs.classList.remove('is-active');}"
         "if(bp){if(running)bp.classList.remove('is-active');else bp.classList.add('is-active');}"
         "}"
+        "function setSwitchLine(useMaster){"
+        "var line=q('pre_block_line');var block=q('pre_block');"
+        "if(!line||!block)return;"
+        "if(useMaster){"
+        "line.setAttribute('x1','215');line.setAttribute('y1','205');line.setAttribute('x2','250');line.setAttribute('y2','180');"
+        "block.classList.add('switch-disabled');block.classList.remove('switch-active');"
+        "}else{"
+        "line.setAttribute('x1','200');line.setAttribute('y1','180');line.setAttribute('x2','250');line.setAttribute('y2','180');"
+        "block.classList.remove('switch-disabled');block.classList.add('switch-active');"
+        "}"
+        "useMasterSetpoint=useMaster;"
+        "}"
+        "function toggleSetpointSource(){setSwitchLine(!useMasterSetpoint)}"
+        "function setFeedbackSwitch(allow){"
+        "var line=q('fb_switch_line');var text=q('fb_switch_text');var block=q('fb_switch');"
+        "if(!line||!text||!block)return;"
+        "if(allow){"
+        "line.style.display='';text.style.display='none';block.classList.remove('switch-disabled');block.classList.add('switch-active');"
+        "}else{"
+        "line.style.display='none';text.style.display='';block.classList.remove('switch-active');block.classList.add('switch-disabled');"
+        "}"
+        "allowSensSignal=allow;"
+        "}"
+        "function toggleFeedbackSwitch(){setFeedbackSwitch(!allowSensSignal)}"
         "/* Sync incoming state into UI fields and plotting buffers. */"
         "function updateUI(d){"
         "if(!d)return;"
@@ -527,13 +583,13 @@ static void build_app_js(char *out, size_t out_len) {
         "q('kp').value=d.kp.toFixed(3);"
         "q('ki').value=d.ki.toFixed(3);"
         "q('kd').value=d.kd.toFixed(3);"
-        "q('dt').value=sampleMs/1000;"
+        "q('dt').value=d.dt;"
         "q('model').value=d.model.toString();"
         "q('gain').value=d.gain.toFixed(2);"
         "q('tau').value=d.tau.toFixed(2);"
         "q('wn').value=d.wn.toFixed(2);"
         "q('zeta').value=d.zeta.toFixed(2);"
-        "q('dead').value=d.dead.toFixed(1);"
+        "q('dead').value=d.dead;"
         "q('act_min').value=d.act_min.toFixed(2);"
         "q('act_max').value=d.act_max.toFixed(2);"
         "q('act_inject').checked=!!d.act_inject;"
@@ -622,6 +678,9 @@ static void build_app_js(char *out, size_t out_len) {
         "if(q('show_u1').checked)plot(u1,q('color_u1').value||'#6abf4b');"
         "if(q('show_y').checked)plot(y,q('color_y').value||'#b00');}"
         "setWindow();setPlotSize();"
+        "setSwitchLine(useMasterSetpoint);setFeedbackSwitch(allowSensSignal);"
+        "var switchBlock=q('pre_block');if(switchBlock){switchBlock.addEventListener('click',toggleSetpointSource);}"
+        "var feedbackSwitch=q('fb_switch');if(feedbackSwitch){feedbackSwitch.addEventListener('click',toggleFeedbackSwitch);}"
         "api('/api/state',updateUI);"
         "setInterval(function(){api('/api/state?t='+(new Date().getTime()),updateUI);},200);");
 }

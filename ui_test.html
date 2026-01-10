@@ -2,9 +2,8 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Pico W PID Simulator (UI Test)</title>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+    <title>Pico W PID Simulator</title>
     <style>
         body {
             font-family: Verdana, Arial, sans-serif;
@@ -37,11 +36,12 @@
         button:active {
             background: #f5f2e9;
         }
+
         button.is-active {
             background: #f5f2e9;
         }
 
-        input:not([type="checkbox"]),
+        input:not([type='checkbox']),
         select {
             padding: 6px;
             border: 2px solid #222;
@@ -49,14 +49,15 @@
             width: 110px;
         }
 
-        input[type="checkbox"] {
+        input[type='checkbox'] {
             width: auto;
             padding: 0;
             border: 0;
             margin: 0;
             vertical-align: middle;
         }
-        input[type="color"] {
+
+        input[type='color'] {
             appearance: none;
             -webkit-appearance: none;
             padding: 0;
@@ -94,363 +95,266 @@
             fill: #222;
             font-weight: bold;
         }
+
         .switch-active {
             fill: #f5f2e9;
         }
+
         .switch-disabled {
             fill: #ffbaba;
         }
+
         .master-border {
             fill: #fff;
             stroke: #777;
         }
+
         .master-box {
             fill: #f0f0f0;
             stroke: #777;
         }
+
         .master-text {
             fill: #777;
         }
-        .switch-active {
-            fill: #f5f2e9;
+
+        .schematic-shift {
+            margin-left: 140px;
         }
     </style>
 </head>
 
 <body>
-    <h2>Pico W PID Simulator (UI Test)</h2>
-    <div id="help_panel" style="display:none;border:2px solid #222;background:#fff;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:bold;margin-bottom:8px;">Upper you can see a diagram of an automatic system in a closed-loop feedback.</div>
-        <div style="font-weight:bold;margin-top:10px;">Blocks and signals</div>
-        <div style="margin-top:6px;"><b>Setpoint reg</b>: Here you set the value you want the system to achieve in the process.</div>
-        <div style="margin-top:4px;"><b>Summing junction (comparator)</b>: Does a simple operation to close the negative feedback loop: e(t) = r(t) - y1(t)</div>
-        <div style="margin-top:4px;"><b>PID controller</b>: The PID mathematical algorithm with e(t) as the input signal and u(t) as the result (controller output).</div>
-        <div style="margin-top:6px;"><b>Inputs you can set (tuning parameters)</b>:</div>
-        <div style="margin-left:14px;">Kp - proportional gain (how strongly the controller reacts to the current error)</div>
-        <div style="margin-left:14px;">Ki - integral gain (how strongly it reacts to accumulated error over time)</div>
-        <div style="margin-left:14px;">Kd - derivative gain (how strongly it reacts to how fast the error is changing)</div>
-        <div style="margin-left:14px;">dT - controller time step / sampling period used by the PID calculations</div>
-        <div style="margin-top:6px;"><b>Actuator / FCE</b>: As we simulate a real system, understand that an actuator can:</div>
-        <div style="margin-left:14px;">Inject energy - actuator can only add energy to the system (e.g., heater in an oven)</div>
-        <div style="margin-left:14px;">Absorb energy - actuator can only remove energy from the system (e.g., refrigerator)</div>
-        <div style="margin-left:14px;">Or both, for example a motor drive which can accelerate and brake the motor.</div>
-        <div style="margin-top:4px;">Also, a real actuator cannot inject or absorb infinite energy into/from the system. This is why you can set:</div>
-        <div style="margin-left:14px;">Min / Max - clamps the actuator output to a allowed range (you can leave it as it is: -100...100, e.g. % of power, PWM, Current, etc)</div>
-        <div style="margin-top:6px;"><b>Plant / Process</b>: This is the system being controlled (the "process"). More exactly, it is the mathematical equation that describes it.</div>
-        <div style="margin-top:4px;">You can choose the mathematical model: First order or Second order, and set parameters:</div>
-        <div style="margin-left:14px;">Gain (K) - overall plant gain</div>
-        <div style="margin-left:14px;">Tau (tau) - time constant (first-order model)</div>
-        <div style="margin-left:14px;">Wn (wn) - natural frequency (second-order model)</div>
-        <div style="margin-left:14px;">Zeta (zeta) - damping ratio (second-order model)</div>
-        <div style="margin-left:14px;">Dead (ms) - dead time / input delay before the plant responds</div>
-        <div style="margin-top:6px;"><b>Sensor</b>: Measures the plant output for feedback (often modeled as gain = 1).</div>
-        <div style="font-weight:bold;margin-top:10px;">Controls (buttons)</div>
-        <div style="margin-left:14px;">Apply - send/use the current settings (parameters) in the simulation</div>
-        <div style="margin-left:14px;">Start - starts running the control loop (run setpoint + PID controller)</div>
-        <div style="margin-left:14px;">Stop - stops the control loop (stop setpoint + PID controller only); rest of the system is still simulated, as in real life</div>
-        <div style="margin-left:14px;">Reset - resets the simulation state (time, internal states, PID internal data, etc.)</div>
-        <div style="margin-left:14px;">Clear Plot - clears the plotted history (graph only)</div>
+    <h2>Pico W PID Simulator</h2>
+    <div id='help_panel' style='display:none;border:2px solid #222;background:#fff;padding:12px;margin-bottom:12px;'>
+        <div style='font-weight:bold;margin-bottom:8px;'>On this page you can see a diagram of an automatic system in a
+            closed-loop feedback.</div>
+        <div style='font-weight:bold;margin-top:10px;'>Blocks and signals</div>
+        <div style='margin-top:6px;'><b>Setpoint reg</b>: Here you set the value you want the system to achieve in the
+            process.</div>
+        <div style='margin-top:4px;'><b>Summing junction (comparator)</b>: Does a simple operation to close the negative
+            feedback loop: e(t) = r(t) - y1(t)</div>
+        <div style='margin-top:4px;'><b>PID controller</b>: The PID mathematical algorithm with e(t) as the input signal
+            and u(t) as the result (controller output).</div>
+        <div style='margin-top:6px;'><b>Inputs you can set (tuning parameters)</b>:</div>
+        <div style='margin-left:14px;'>Kp - proportional gain (how strongly the controller reacts to the current error)
+        </div>
+        <div style='margin-left:14px;'>Ki - integral gain (how strongly it reacts to accumulated error over time)</div>
+        <div style='margin-left:14px;'>Kd - derivative gain (how strongly it reacts to how fast the error is changing)
+        </div>
+        <div style='margin-left:14px;'>dT (ms) - controller time step / sampling period used by the PID calculations
+        </div>
+        <div style='margin-top:6px;'><b>Actuator / FCE</b>: As we simulate a real system, understand that an actuator
+            can:</div>
+        <div style='margin-left:14px;'>Inject energy - actuator can only add energy to the system (e.g., heater in an
+            oven)</div>
+        <div style='margin-left:14px;'>Absorb energy - actuator can only remove energy from the system (e.g.,
+            refrigerator)</div>
+        <div style='margin-left:14px;'>Or both, for example a motor drive which can accelerate and brake the motor.
+        </div>
+        <div style='margin-top:4px;'>Also, a real actuator cannot inject or absorb infinite energy into/from the system.
+            This is why you can set:</div>
+        <div style='margin-left:14px;'>Min / Max - clamps the actuator output to a allowed range (you can leave it as it
+            is: -100...100, e.g. % of power, PWM, Current, etc)</div>
+        <div style='margin-top:6px;'><b>Plant / Process</b>: This is the system being controlled (the "process"). More
+            exactly, it is the mathematical equation that describes it.</div>
+        <div style='margin-top:4px;'>You can choose the mathematical model: First order or Second order, and set
+            parameters:</div>
+        <div style='margin-left:14px;'>Gain (K) - overall plant gain</div>
+        <div style='margin-left:14px;'>Tau (tau) - time constant (first-order model)</div>
+        <div style='margin-left:14px;'>Wn (wn) - natural frequency (second-order model)</div>
+        <div style='margin-left:14px;'>Zeta (zeta) - damping ratio (second-order model)</div>
+        <div style='margin-left:14px;'>Dead (ms) - dead time / input delay before the plant responds</div>
+        <div style='margin-top:6px;'><b>Sensor</b>: Measures the plant output for feedback (often modeled as gain = 1).
+        </div>
+        <div style='font-weight:bold;margin-top:10px;'>Controls (buttons)</div>
+        <div style='margin-left:14px;'>Apply - send/use the current settings (parameters) in the simulation</div>
+        <div style='margin-left:14px;'>Start - starts running the control loop (run setpoint + PID controller)</div>
+        <div style='margin-left:14px;'>Stop - stops the control loop (stop setpoint + PID controller only); rest of the
+            system is still simulated, as in real life</div>
+        <div style='margin-left:14px;'>Reset - resets the PID internal state and disconnects the setpoint from r(t)
+        </div>
+        <div style='margin-left:14px;'>Clear Plot - clears the plotted history (graph only)</div>
     </div>
-    <div class="card">
-        <div><b>Status</b>: <span id="running">STOPPED</span></div>
+    <div class='card'>
+        <div><b>Status</b>: <span id='running'>STOPPED</span></div>
     </div>
-    <div class="card">
-        <svg id="control_diagram" width="1600" height="420" viewBox="0 0 1600 420">
+    <div class='card'><svg id='control_diagram' width='1600' height='420' viewBox='0 0 1600 420'>
             <defs>
-                <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
+                <marker id='arrow' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'>
+                    <polygon points='0 0, 10 3.5, 0 7' fill='#222' />
                 </marker>
-            </defs> <!-- ========================= Main chain (aligned on y=180) ========================= --> <!-- Setpoint reg -->
-            <rect id="sp_block" class="diag-block" x="20" y="145" width="140" height="75" /> <text class="diag-title" x="90" y="165" text-anchor="middle">Setpoint reg</text>
-            <foreignObject x="30" y="172" width="120" height="34">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;justify-content:center;"> <input id="setpoint" value="200" style="width:80px;" /> </div>
-            </foreignObject> <!-- r(t) -->
-            <rect id="master_block" class="diag-block master-border" x="20" y="240" width="140" height="140" />
-            <text class="diag-title master-text" x="90" y="265" text-anchor="middle">Master app control</text>
-            <rect id="master_value_box" class="diag-block master-box" x="40" y="290" width="100" height="30" />
-            <text id="master_value" class="diag-text master-text" x="90" y="310" text-anchor="middle">0</text>
-            <polyline id="line_master_to_switch" class="diag-line" points="160,290 215,290 215,205" marker-end="url(#arrow)" />
-            <text class="diag-text" x="165" y="285">m_r(t)</text>
-            <polyline id="line_master_to_sw1_dash" class="diag-line" points="160,310 230,310 230,205" style="stroke:#777;stroke-dasharray:4 3;" />
-            <polyline id="line_master_to_sw2" class="diag-line" points="160,330 315,330 315,305" style="stroke:#777;stroke-dasharray:4 3;" />
-            <line id="line_r" class="diag-line" x1="160" y1="180" x2="200" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="168" y="170">r(t)</text> <!-- Summing junction -->
-            <rect id="pre_block" class="diag-block switch-disabled" x="200" y="155" width="50" height="50" />
-            <text class="diag-text" x="225" y="150" text-anchor="middle">SW1</text>
-            <line id="pre_block_line" class="diag-line" x1="200" y1="180" x2="250" y2="180"></line>
-            <g id="diagram_shift" transform="translate(100 0)">
-            <line id="line_r2" class="diag-line" x1="150" y1="180" x2="202" y2="180" marker-end="url(#arrow)" />
-            <circle id="sum_block" class="diag-block" cx="230" cy="180" r="28" /> <text class="diag-text" x="222" y="172">+</text> <text class="diag-text" x="222" y="202">-</text> <!-- e(t) -->
-            <line id="line_e" class="diag-line" x1="258" y1="180" x2="290" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="266" y="170">e(t)</text> <!-- PID controller -->
-            <rect id="pid_block" class="diag-block" x="290" y="120" width="260" height="120" /> <text class="diag-title" x="420" y="148" text-anchor="middle">PID controller</text> <!-- PID inputs in one row (like reference) -->
-            <foreignObject x="295" y="160" width="250" height="50">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;gap:0px;justify-content:center;align-items:flex-start;font-size:12px;">
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Kp</div><input id="kp" value="0.000" style="width:45px;padding:6px;margin:2px;" />
+            </defs>
+            <rect id='sp_block' class='diag-block' x='20' y='145' width='140' height='75' /><text class='diag-title'
+                x='90' y='165' text-anchor='middle'>Setpoint reg</text>
+            <foreignObject x='30' y='172' width='120' height='34'>
+                <div xmlns='http://www.w3.org/1999/xhtml' style='display:flex;justify-content:center;'><input
+                        id='setpoint' value='200' style='width:80px;' /></div>
+            </foreignObject>
+            <rect id='master_block' class='diag-block master-border' x='20' y='240' width='140' height='140' /><text
+                class='diag-title master-text' x='90' y='265' text-anchor='middle'>Master app control</text>
+            <rect id='master_value_box' class='diag-block master-box' x='40' y='290' width='100' height='30' /><text
+                id='master_value' class='diag-text master-text' x='90' y='310' text-anchor='middle'>0</text>
+            <polyline id='line_master_to_switch' class='diag-line' points='160,290 215,290 215,205'
+                marker-end='url(#arrow)' /><text class='diag-text' x='165' y='285'>m_r(t)</text>
+            <polyline id='line_master_to_sw1_dash' class='diag-line' points='160,310 230,310 230,205'
+                style='stroke:#777;stroke-dasharray:4 3;' />
+            <polyline id='line_master_to_sw2' class='diag-line' points='160,330 315,330 315,305'
+                style='stroke:#777;stroke-dasharray:4 3;' />
+            <line id='line_r' class='diag-line' x1='160' y1='180' x2='200' y2='180' marker-end='url(#arrow)' /><text
+                class='diag-text' x='168' y='170'>r(t)</text>
+            <rect id='pre_block' class='diag-block switch-disabled' x='200' y='155' width='50' height='50' /><text
+                class='diag-text' x='225' y='150' text-anchor='middle'>SW1</text>
+            <line id='pre_block_line' class='diag-line' x1='200' y1='180' x2='250' y2='180'></line>
+            <g id='diagram_shift' transform='translate(100 0)'>
+                <line id='line_r2' class='diag-line' x1='150' y1='180' x2='202' y2='180' marker-end='url(#arrow)' />
+                <circle id='sum_block' class='diag-block' cx='230' cy='180' r='28' /><text class='diag-text' x='222'
+                    y='172'>+</text><text class='diag-text' x='222' y='202'>-</text>
+                <line id='line_e' class='diag-line' x1='258' y1='180' x2='290' y2='180' marker-end='url(#arrow)' /><text
+                    class='diag-text' x='266' y='170'>e(t)</text>
+                <rect id='pid_block' class='diag-block' x='290' y='120' width='260' height='120' /><text
+                    class='diag-title' x='420' y='148' text-anchor='middle'>PID controller</text>
+                <foreignObject x='295' y='160' width='250' height='50'>
+                    <div xmlns='http://www.w3.org/1999/xhtml'
+                        style='display:flex;gap:0px;justify-content:center;align-items:flex-start;font-size:12px;'>
+                        <div style='display:flex;flex-direction:column;align-items:center;'>
+                            <div>Kp</div><input id='kp' value='0.000' style='width:45px;padding:6px;margin:2px;' />
+                        </div>
+                        <div style='display:flex;flex-direction:column;align-items:center;'>
+                            <div>Ki</div><input id='ki' value='0.000' style='width:45px;padding:6px;margin:2px;' />
+                        </div>
+                        <div style='display:flex;flex-direction:column;align-items:center;'>
+                            <div>Kd</div><input id='kd' value='0.000' style='width:45px;padding:6px;margin:2px;' />
+                        </div>
+                        <div style='display:flex;flex-direction:column;align-items:center;'>
+                            <div>dT (ms)</div><input id='dt' value='10' style='width:36px;padding:6px;margin:2px;' />
+                        </div>
                     </div>
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Ki</div><input id="ki" value="0.000" style="width:45px;padding:6px;margin:2px;" />
+                </foreignObject>
+                <line id='line_u' class='diag-line' x1='550' y1='180' x2='600' y2='180' marker-end='url(#arrow)' /><text
+                    class='diag-text' x='555' y='170'>u(t)</text>
+                <rect id='act_block' class='diag-block' x='600' y='115' width='220' height='130' /><text
+                    class='diag-title' x='705' y='133' text-anchor='middle'>Actuator / FCE</text>
+                <foreignObject x='610' y='140' width='235' height='100'>
+                    <div xmlns='http://www.w3.org/1999/xhtml' style='font-size:12px;line-height:1.2;'><label
+                            style='display:flex;align-items:center;gap:10px;margin:0 px;'><input type='checkbox'
+                                id='act_inject'
+                                style='width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;'
+                                onchange='saveSettings();updateActuatorModeUI()'><span
+                                style='display:inline-block;line-height:22px;'>Inject energy</span></label><label
+                            style='display:flex;align-items:center;gap:8px;margin:6px 0 0 0;'><input type='checkbox'
+                                id='act_absorb'
+                                style='width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;'
+                                onchange='saveSettings();updateActuatorModeUI()'><span
+                                style='display:inline-block;line-height:22px;'>Absorb energy</span></label>
+                        <div style='margin-top:8px;display:flex;gap:6px;align-items:center;'><span>Min</span><input
+                                id='act_min' value='-100'
+                                style='width:50px;padding:6px;margin:2px;' /><span>Max</span><input id='act_max'
+                                value='100' style='width:50px;padding:6px;margin:2px;' /></div>
                     </div>
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>Kd</div><input id="kd" value="0.000" style="width:45px;padding:6px;margin:2px;" />
+                </foreignObject>
+                <line id='line_u1' class='diag-line' x1='820' y1='180' x2='870' y2='180' marker-end='url(#arrow)' />
+                <text class='diag-text' x='825' y='170'>u1(t)</text>
+                <rect id='plant_block' class='diag-block' x='870' y='110' width='360' height='215' /><text
+                    class='diag-title' x='1050' y='128' text-anchor='middle'>Plant / Process</text>
+                <foreignObject x='885' y='134' width='330' height='180'>
+                    <div xmlns='http://www.w3.org/1999/xhtml' style='font-size:12px;'>
+                        <div style='display:flex;align-items:center;gap:8px;margin-bottom:4px;'>
+                            <div style='font-weight:bold;'>Model</div><select id='model' style='width:240px;'
+                                onchange='updateModelUI();saveSettings()'>
+                                <option value='0'>First order</option>
+                                <option value='1' selected>Second order</option>
+                            </select>
+                        </div>
+                        <div style='display:flex;gap:10px;flex-wrap:wrap;'>
+                            <div id='row_gain' style='display:inline-flex;align-items:center;gap:6px;'>Gain <input
+                                    id='gain' value='2.0' style='width:50px;padding:6px;margin:2px;' /></div>
+                            <div id='row_tau' style='display:inline-flex;align-items:center;gap:6px;'>Tau <input
+                                    id='tau' value='8.0' style='width:50px;padding:6px;margin:2px;' /></div>
+                            <div id='row_wn' style='display:inline-flex;align-items:center;gap:6px;'>Wn <input id='wn'
+                                    value='1.2' style='width:50px;padding:6px;margin:2px;' /></div>
+                            <div id='row_zeta' style='display:inline-flex;align-items:center;gap:6px;'>Zeta <input
+                                    id='zeta' value='0.7' style='width:50px;padding:6px;margin:2px;' /></div>
+                            <div id='row_dead' style='display:inline-flex;align-items:center;gap:6px;'>Dead <input
+                                    id='dead' value='0' style='width:50px;padding:6px;margin:2px;' /> ms</div>
+                        </div>
+                        <div style='border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;'>
+                            <div id='tf_text'>Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70
+                            </div>
+                        </div>
                     </div>
-                    <div style="display:flex;flex-direction:column;align-items:center;">
-                        <div>dT</div><input id="dt" value="0" style="width:30px;padding:6px;margin:2px;" />
-                    </div>
-                </div>
-            </foreignObject> <!-- u(t) -->
-            <line id="line_u" class="diag-line" x1="550" y1="180" x2="600" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="555" y="170">u(t)</text> <!-- Actuator / FCE -->
-            <rect id="act_block" class="diag-block" x="600" y="115" width="220" height="130" /> <text class="diag-title" x="705" y="133" text-anchor="middle">Actuator / FCE</text>
-            <foreignObject x="610" y="140" width="235" height="100">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.2;">
-
-                    <label style="display:flex;align-items:center;gap:10px;margin:0 px;">
-                        <input type="checkbox" id="act_inject" style="width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;">
-                        <span style="display:inline-block;line-height:22px;">Inject energy</span>
-                    </label>
-
-                    <label style="display:flex;align-items:center;gap:8px;margin:6px 0 0 0;">
-                        <input type="checkbox" id="act_absorb" style="width:22px;height:22px;flex:0 0 22px;margin:0;padding:0;border:0;box-sizing:border-box;">
-                        <span style="display:inline-block;line-height:22px;">Absorb energy</span>
-                    </label>
-
-                    <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-                        <span>Min</span>
-                        <input id="act_min" value="-100" style="width:50px;padding:6px;margin:1px;" />
-                        <span>Max</span>
-                        <input id="act_max" value="100" style="width:50px;padding:6px;margin:1px;" />
-                    </div>
-
-                </div>
-
-            </foreignObject> <!-- u1(t) -->
-            <line id="line_u1" class="diag-line" x1="820" y1="180" x2="870" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="825" y="170">u1(t)</text> <!-- Plant / Process (bigger, centered like reference) -->
-            <rect id="plant_block" class="diag-block" x="870" y="110" width="360" height="215" /> <text class="diag-title" x="1050" y="128" text-anchor="middle">Plant / Process</text>
-            <foreignObject x="885" y="134" width="330" height="180">
-                <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                        <div style="font-weight:bold;">Model</div> <select id="model" style="width:240px;">
-                            <option value="0">First order</option>
-                            <option value="1" selected>Second order</option>
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                        <div id="row_gain" style="display:inline-flex;align-items:center;gap:6px;">Gain <input id="gain" value="2.0" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div id="row_tau" style="display:inline-flex;align-items:center;gap:6px;">Tau <input id="tau" value="8.0" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div id="row_wn" style="display:inline-flex;align-items:center;gap:6px;">Wn <input id="wn" value="1.2" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div id="row_zeta" style="display:inline-flex;align-items:center;gap:6px;">Zeta <input id="zeta" value="0.7" style="width:50px;padding:6px;margin:2px;" /></div>
-                        <div id="row_dead" style="display:inline-flex;align-items:center;gap:6px;">Dead <input id="dead" value="0" style="width:50px;padding:6px;margin:2px;" /> ms</div>
-                    </div>
-                    <div style="border:2px solid #222;padding: 6px;margin-top: 6px;font-size: 12px;">
-                        <div id="tf_text">Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=5.00, wn=1.20, zeta=0.70</div>
-                    </div>
-                </div>
-            </foreignObject> <!-- y(t) output -->
-            <line id="line_y" class="diag-line" x1="1230" y1="180" x2="1300" y2="180" marker-end="url(#arrow)" /> <text class="diag-text" x="1300" y="175">y(t)</text> <!-- ========================= External disturbance (above actuator, enters from top) ========================= -->
-            <rect id="dist_block" class="diag-block" x="600" y="20" width="220" height="70" /> <text class="diag-title" x="700" y="45" text-anchor="middle">External disturbance</text> <!-- disturbance path: right -> then down into plant top -->
-            <line id="line_pd1" class="diag-line" x1="820" y1="55" x2="1060" y2="55" />
-            <line id="line_pd2" class="diag-line" x1="1060" y1="55" x2="1060" y2="110" marker-end="url(#arrow)" /> <text class="diag-text" x="1070" y="80">p(t)</text> <!-- ========================= Sensor + feedback loop ========================= -->
-            <rect id="sens_block" class="diag-block" x="600" y="320" width="220" height="70" /> <text class="diag-title" x="705" y="342" text-anchor="middle">Sensor</text>
-            <rect class="diag-block" x="698" y="352" width="22" height="22" /> <text class="diag-text" x="709" y="368" text-anchor="middle">1</text> <!-- Branch from y(t) line down -->
-            <line id="fb_down" class="diag-line" x1="1260" y1="180" x2="1260" y2="355" /> <!-- Into sensor from right (arrow points left) -->
-            <line id="fb_into_sensor" class="diag-line" x1="1260" y1="355" x2="820" y2="355" marker-end="url(#arrow)" /> <!-- Out of sensor to the left -->
-            <line id="fb_out_sensor" class="diag-line" x1="600" y1="355" x2="230" y2="355" /> <!-- Up into summing junction -->
-            <rect id="fb_switch" class="diag-block" x="205" y="260" width="50" height="50" />
-            <text class="diag-text" x="275" y="290" text-anchor="middle">SW2</text>
-            <line id="fb_switch_line" class="diag-line" x1="230" y1="260" x2="230" y2="310" />
-            <text id="fb_switch_text" class="diag-text" x="230" y="286" text-anchor="middle" style="display:none;">0</text>
-            <line id="fb_up_to_sw2" class="diag-line" x1="230" y1="260" x2="230" y2="208" marker-end="url(#arrow)" /> <text class="diag-text" x="246" y="228">y1(t)</text>
-            <line id="fb_up_to_sum" class="diag-line" x1="230" y1="355" x2="230" y2="310" />
+                </foreignObject>
+                <line id='line_y' class='diag-line' x1='1230' y1='180' x2='1300' y2='180' marker-end='url(#arrow)' />
+                <text class='diag-text' x='1300' y='175'>y(t)</text>
+                <rect id='dist_block' class='diag-block' x='600' y='20' width='220' height='70' /><text
+                    class='diag-title' x='700' y='45' text-anchor='middle'>External disturbance</text>
+                <line id='line_pd1' class='diag-line' x1='820' y1='55' x2='1060' y2='55' />
+                <line id='line_pd2' class='diag-line' x1='1060' y1='55' x2='1060' y2='110' marker-end='url(#arrow)' />
+                <text class='diag-text' x='1070' y='80'>p(t)</text>
+                <rect id='sens_block' class='diag-block' x='600' y='320' width='220' height='70' /><text
+                    class='diag-title' x='705' y='342' text-anchor='middle'>Sensor</text>
+                <rect class='diag-block' x='698' y='352' width='22' height='22' /><text class='diag-text' x='709'
+                    y='368' text-anchor='middle'>1</text>
+                <line id='fb_down' class='diag-line' x1='1260' y1='180' x2='1260' y2='355' />
+                <line id='fb_into_sensor' class='diag-line' x1='1260' y1='355' x2='820' y2='355'
+                    marker-end='url(#arrow)' />
+                <line id='fb_out_sensor' class='diag-line' x1='600' y1='355' x2='230' y2='355' />
+                <rect id='fb_switch' class='diag-block' x='205' y='260' width='50' height='50' /><text class='diag-text'
+                    x='275' y='290' text-anchor='middle'>SW2</text>
+                <line id='fb_switch_line' class='diag-line' x1='230' y1='260' x2='230' y2='310' /><text
+                    id='fb_switch_text' class='diag-text' x='230' y='286' text-anchor='middle'
+                    style='display:none;'>0</text>
+                <line id='fb_up_to_sw2' class='diag-line' x1='230' y1='260' x2='230' y2='208'
+                    marker-end='url(#arrow)' /><text class='diag-text' x='246' y='228'>y1(t)</text>
+                <line id='fb_up_to_sum' class='diag-line' x1='230' y1='355' x2='230' y2='310' />
             </g>
         </svg>
-        <div class="controls">
-            <div>Time window (s) <input id="window" type="number" min="10" step="10" value="100"></div>
-            <div>Plot W <input id="plot_w" type="number" min="300" step="10" value="1400"></div>
-            <div>Plot H <input id="plot_h" type="number" min="200" step="10" value="700"></div>
-            <button>Apply</button>
-            <button id="btn_start" onclick="setRunButtonsState(true)">Start</button>
-            <button id="btn_stop" onclick="setRunButtonsState(false)">Stop</button>
-            <button>Reset</button>
-            <button>Clear Plot</button>
-            <button id="btn_help" onclick="toggleHelp()">Help</button>
+        <div class='controls'>
+            <div>Time window (s) <input id='window' type='number' min='10' step='10' value='100'
+                    onchange='setWindow();saveSettings()'></div>
+            <div>Plot W <input id='plot_w' type='number' min='300' step='10' value='1400'
+                    onchange='setPlotSize();saveSettings()'></div>
+            <div>Plot H <input id='plot_h' type='number' min='200' step='10' value='700'
+                    onchange='setPlotSize();saveSettings()'></div><button onclick='sendConfig()'>Apply</button><button
+                id='btn_start' onclick='startSim()'>Start</button><button id='btn_stop'
+                onclick='stopSim()'>Stop</button><button onclick='resetSim()'>Reset</button><button
+                onclick='clearPlot()'>Clear Plot</button><button id='btn_help' onclick='toggleHelp()'>Help</button>
         </div>
     </div>
-    <div class="card">
-        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-            <div><b>Time t</b>: <span id="time">0</span> s</div>
-            <div><b>Output y(t)</b>: <span id="output">0</span></div>
-            <div><b>Control u(t)</b>: <span id="control">0</span></div>
-            <div><b>Actuator u1(t)</b>: <span id="actuator">0</span></div>
+    <div class='card'>
+        <div style='display:flex;gap:16px;align-items:center;flex-wrap:wrap;'>
+            <div><b>Time t</b>: <span id='time'>0</span> s</div>
+            <div><b>Output y(t)</b>: <span id='output'>0</span></div>
+            <div><b>Control u(t)</b>: <span id='control'>0</span></div>
+            <div><b>Actuator u1(t)</b>: <span id='actuator'>0</span></div>
         </div>
     </div>
-    <div class="card">
-        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:flex-start;">
-            <div style="display:inline-flex;gap:8px;align-items:center;">
-                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_sp" checked style="margin:0;">Setpoint</label>
-                <input type="color" id="color_sp" value="#000000" style="margin:0;width:28px;height:20px;">
-            </div>
-            <div style="display:inline-flex;gap:8px;align-items:center;">
-                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u" checked style="margin:0;">Control u</label>
-                <input type="color" id="color_u" value="#9b9b9b" style="margin:0;width:28px;height:20px;">
-            </div>
-            <div style="display:inline-flex;gap:8px;align-items:center;">
-                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_u1" checked style="margin:0;">Actuator u1</label>
-                <input type="color" id="color_u1" value="#6abf4b" style="margin:0;width:28px;height:20px;">
-            </div>
-            <div style="display:inline-flex;gap:8px;align-items:center;">
-                <label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" id="show_y" checked style="margin:0;">Output y</label>
-                <input type="color" id="color_y" value="#b00000" style="margin:0;width:28px;height:20px;">
-            </div>
-        </div>
-        <canvas id="plot" width="1400" height="700"></canvas>
+    <div class='card'>
+        <div style='display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:flex-start;'>
+            <div style='display:inline-flex;gap:8px;align-items:center;'><label
+                    style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_sp'
+                        checked onchange='saveSettings();draw()' style='margin:0;'>Setpoint</label><input type='color'
+                    id='color_sp' value='#000000' onchange='saveSettings();updateColorPickers();draw()'
+                    style='margin:0;width:28px;height:20px;'></div>
+            <div style='display:inline-flex;gap:8px;align-items:center;'><label
+                    style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_u'
+                        checked onchange='saveSettings();draw()' style='margin:0;'>Control u</label><input type='color'
+                    id='color_u' value='#9b9b9b' onchange='saveSettings();updateColorPickers();draw()'
+                    style='margin:0;width:28px;height:20px;'></div>
+            <div style='display:inline-flex;gap:8px;align-items:center;'><label
+                    style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_u1'
+                        checked onchange='saveSettings();draw()' style='margin:0;'>Actuator u1</label><input
+                    type='color' id='color_u1' value='#6abf4b' onchange='saveSettings();updateColorPickers();draw()'
+                    style='margin:0;width:28px;height:20px;'></div>
+            <div style='display:inline-flex;gap:8px;align-items:center;'><label
+                    style='display:inline-flex;gap:6px;align-items:center;margin:0;'><input type='checkbox' id='show_y'
+                        checked onchange='saveSettings();draw()' style='margin:0;'>Output y</label><input type='color'
+                    id='color_y' value='#b00000' onchange='saveSettings();updateColorPickers();draw()'
+                    style='margin:0;width:28px;height:20px;'></div>
+        </div><canvas id='plot' width='1400' height='700'></canvas>
     </div>
     <script>
-        var useMasterSetpoint = false;
-        var allowSensSignal = true;
-
-        /* UI test stub: update transfer function text only. */
-        function updateTF() {
-            var model = document.getElementById('model').value;
-            var gain = document.getElementById('gain').value;
-            var tau = document.getElementById('tau').value;
-            var wn = document.getElementById('wn').value;
-            var zeta = document.getElementById('zeta').value;
-            var tf = '';
-            if (model === '0') {
-                tf = 'Y(s)/U(s) = K/(tau*s+1) | K=' + gain + ', tau=' + tau;
-            } else {
-                tf = 'Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2) | K=' + gain + ', wn=' + wn + ', zeta=' + zeta;
-            }
-            document.getElementById('tf_text').textContent = tf;
-        }
-        function updateModelUI() {
-            var model = document.getElementById('model').value;
-            var firstOrder = (model === '0');
-            document.getElementById('row_tau').style.display = firstOrder ? 'inline-flex' : 'none';
-            document.getElementById('row_wn').style.display = firstOrder ? 'none' : 'inline-flex';
-            document.getElementById('row_zeta').style.display = firstOrder ? 'none' : 'inline-flex';
-        }
-        document.getElementById('model').addEventListener('change', updateTF);
-        document.getElementById('model').addEventListener('change', updateModelUI);
-        document.getElementById('gain').addEventListener('input', updateTF);
-        document.getElementById('tau').addEventListener('input', updateTF);
-        document.getElementById('wn').addEventListener('input', updateTF);
-        document.getElementById('zeta').addEventListener('input', updateTF);
-        function updateColorPickers() {
-            document.getElementById('color_sp').style.background = document.getElementById('color_sp').value;
-            document.getElementById('color_u').style.background = document.getElementById('color_u').value;
-            document.getElementById('color_u1').style.background = document.getElementById('color_u1').value;
-            document.getElementById('color_y').style.background = document.getElementById('color_y').value;
-        }
-        function setPlotSize() {
-            var c = document.getElementById('plot');
-            var w = parseInt(document.getElementById('plot_w').value, 10);
-            var h = parseInt(document.getElementById('plot_h').value, 10);
-            if (isNaN(w) || w < 300) w = 300;
-            if (isNaN(h) || h < 200) h = 200;
-            c.width = w;
-            c.height = h;
-        }
-        document.getElementById('color_sp').addEventListener('input', updateColorPickers);
-        document.getElementById('color_u').addEventListener('input', updateColorPickers);
-        document.getElementById('color_u1').addEventListener('input', updateColorPickers);
-        document.getElementById('color_y').addEventListener('input', updateColorPickers);
-        document.getElementById('plot_w').addEventListener('change', setPlotSize);
-        document.getElementById('plot_h').addEventListener('change', setPlotSize);
-        function toggleHelp() {
-            var p = document.getElementById('help_panel');
-            if (p) {
-                var open = (p.style.display === 'none' || p.style.display === '');
-                p.style.display = open ? 'block' : 'none';
-                setHelpButtonState(open);
-            }
-        }
-        function setHelpButtonState(open) {
-            var b = document.getElementById('btn_help');
-            if (b) {
-                if (open) {
-                    b.classList.add('is-active');
-                } else {
-                    b.classList.remove('is-active');
-                }
-            }
-        }
-        function setRunButtonsState(running) {
-            var startBtn = document.getElementById('btn_start');
-            var stopBtn = document.getElementById('btn_stop');
-            if (startBtn) {
-                if (running) {
-                    startBtn.classList.add('is-active');
-                } else {
-                    startBtn.classList.remove('is-active');
-                }
-            }
-            if (stopBtn) {
-                if (running) {
-                    stopBtn.classList.remove('is-active');
-                } else {
-                    stopBtn.classList.add('is-active');
-                }
-            }
-        }
-        function setSwitchLine(useMaster) {
-            var line = document.getElementById('pre_block_line');
-            var block = document.getElementById('pre_block');
-            if (!line || !block) return;
-            if (useMaster) {
-                line.setAttribute('x1', '215');
-                line.setAttribute('y1', '205');
-                line.setAttribute('x2', '250');
-                line.setAttribute('y2', '180');
-                block.classList.add('switch-disabled');
-                block.classList.remove('switch-active');
-            } else {
-                line.setAttribute('x1', '200');
-                line.setAttribute('y1', '180');
-                line.setAttribute('x2', '250');
-                line.setAttribute('y2', '180');
-                block.classList.remove('switch-disabled');
-                block.classList.add('switch-active');
-            }
-            useMasterSetpoint = useMaster;
-        }
-        function toggleSetpointSource() {
-            setSwitchLine(!useMasterSetpoint);
-        }
-        function setFeedbackSwitch(allow) {
-            var line = document.getElementById('fb_switch_line');
-            var text = document.getElementById('fb_switch_text');
-            var block = document.getElementById('fb_switch');
-            if (!line || !text || !block) return;
-            if (allow) {
-                line.style.display = '';
-                text.style.display = 'none';
-                block.classList.remove('switch-disabled');
-                block.classList.add('switch-active');
-            } else {
-                line.style.display = 'none';
-                text.style.display = '';
-                block.classList.remove('switch-active');
-                block.classList.add('switch-disabled');
-            }
-            allowSensSignal = allow;
-        }
-        function toggleFeedbackSwitch() {
-            setFeedbackSwitch(!allowSensSignal);
-        }
-        updateTF();
-        updateColorPickers();
-        updateModelUI();
-        setPlotSize();
-        setSwitchLine(useMasterSetpoint);
-        setFeedbackSwitch(allowSensSignal);
-        var switchBlock = document.getElementById('pre_block');
-        if (switchBlock) {
-            switchBlock.addEventListener('click', toggleSetpointSource);
-        }
-        var feedbackSwitch = document.getElementById('fb_switch');
-        if (feedbackSwitch) {
-            feedbackSwitch.addEventListener('click', toggleFeedbackSwitch);
-        }
+/* Sampling and history buffers for plotting. */var sampleMs = 200; var windowSec = 100; var hist = 500; var sp = [], y = [], u = [], u1 = []; var synced = false; var tfPending = false; var runPending = false; var currentTime = 0; var useMasterSetpoint = false; var allowSensSignal = true; function q(id) { return document.getElementById(id) } function api(url, cb) { var x = new XMLHttpRequest(); x.onreadystatechange = function () { if (x.readyState === 4 && x.status === 200) { try { cb(JSON.parse(x.responseText)); } catch (e) { } } }; x.open('GET', url, true); x.setRequestHeader('Cache-Control', 'no-cache'); x.send(); }/* Persist UI settings so a refresh keeps the same values. */function saveSettings() { var s = { setpoint: q('setpoint').value, kp: q('kp').value, ki: q('ki').value, kd: q('kd').value, dt: q('dt').value, model: q('model').value, gain: q('gain').value, tau: q('tau').value, wn: q('wn').value, zeta: q('zeta').value, dead: q('dead').value, act_min: q('act_min').value, act_max: q('act_max').value, window: q('window').value, plot_w: q('plot_w').value, plot_h: q('plot_h').value, show_sp: q('show_sp').checked, show_u: q('show_u').checked, show_u1: q('show_u1').checked, show_y: q('show_y').checked, color_sp: q('color_sp').value, color_u: q('color_u').value, color_u1: q('color_u1').value, color_y: q('color_y').value, act_inject: q('act_inject').checked, act_absorb: q('act_absorb').checked }; try { localStorage.setItem('pid_settings', JSON.stringify(s)); } catch (e) { } }/* Restore UI settings if they were saved previously. */function loadSettings() { try { var raw = localStorage.getItem('pid_settings'); if (!raw) return false; var s = JSON.parse(raw); if (s.setpoint !== undefined) q('setpoint').value = s.setpoint; if (s.kp !== undefined) q('kp').value = s.kp; if (s.ki !== undefined) q('ki').value = s.ki; if (s.kd !== undefined) q('kd').value = s.kd; if (s.dt !== undefined) q('dt').value = s.dt; if (s.model !== undefined) q('model').value = s.model; if (s.gain !== undefined) q('gain').value = s.gain; if (s.tau !== undefined) q('tau').value = s.tau; if (s.wn !== undefined) q('wn').value = s.wn; if (s.zeta !== undefined) q('zeta').value = s.zeta; if (s.dead !== undefined) q('dead').value = s.dead; if (s.act_min !== undefined) q('act_min').value = s.act_min; if (s.act_max !== undefined) q('act_max').value = s.act_max; if (s.window !== undefined) q('window').value = s.window; if (s.plot_w !== undefined) q('plot_w').value = s.plot_w; if (s.plot_h !== undefined) q('plot_h').value = s.plot_h; if (s.show_sp !== undefined) q('show_sp').checked = !!s.show_sp; if (s.show_u !== undefined) q('show_u').checked = !!s.show_u; if (s.show_u1 !== undefined) q('show_u1').checked = !!s.show_u1; if (s.show_y !== undefined) q('show_y').checked = !!s.show_y; if (s.color_sp !== undefined) q('color_sp').value = s.color_sp; if (s.color_u !== undefined) q('color_u').value = s.color_u; if (s.color_u1 !== undefined) q('color_u1').value = s.color_u1; if (s.color_y !== undefined) q('color_y').value = s.color_y; if (s.act_inject !== undefined) q('act_inject').checked = !!s.act_inject; if (s.act_absorb !== undefined) q('act_absorb').checked = !!s.act_absorb; updateColorPickers(); updateActuatorModeUI(); setWindow(); setPlotSize(); return true; } catch (e) { return false; } }/* Send configuration changes to the device. */function sendConfig() { var url = '/api/set?setpoint=' + encodeURIComponent(q('setpoint').value) + '&kp=' + encodeURIComponent(q('kp').value) + '&ki=' + encodeURIComponent(q('ki').value) + '&kd=' + encodeURIComponent(q('kd').value) + '&dt=' + encodeURIComponent(q('dt').value) + '&model=' + encodeURIComponent(q('model').value) + '&gain=' + encodeURIComponent(q('gain').value) + '&tau=' + encodeURIComponent(q('tau').value) + '&wn=' + encodeURIComponent(q('wn').value) + '&zeta=' + encodeURIComponent(q('zeta').value) + '&dead=' + encodeURIComponent(q('dead').value) + '&act_min=' + encodeURIComponent(q('act_min').value) + '&act_max=' + encodeURIComponent(q('act_max').value) + '&act_inject=' + (q('act_inject').checked ? 1 : 0) + '&act_absorb=' + (q('act_absorb').checked ? 1 : 0); saveSettings(); tfPending = true; runPending = true; api(url, function (d) { if (d && tfPending) { q('tf_text').textContent = transferText(d); tfPending = false; } updateUI(d); }); }/* Recalculate history length when time window changes. */function setWindow() { var v = parseFloat(q('window').value); if (isNaN(v) || v < 2) v = 2; windowSec = v; hist = Math.floor((windowSec * 1000) / sampleMs) + 1; if (hist < 10) hist = 10; while (sp.length > hist) { sp.shift(); y.shift(); u.shift(); u1.shift(); } } function setPlotSize() { var c = q('plot'); var w = parseInt(q('plot_w').value, 10); var h = parseInt(q('plot_h').value, 10); if (isNaN(w) || w < 300) w = 300; if (isNaN(h) || h < 200) h = 200; c.width = w; c.height = h; draw(); } function startSim() { setRunButtonsState(true); runPending = true; api('/api/set?run=1', updateUI) } function stopSim() { setRunButtonsState(false); runPending = true; api('/api/set?run=0', updateUI) } function resetSim() { runPending = true; api('/api/set?reset=1', updateUI) }/* Clear plotted history without changing configuration. */function clearPlot() { sp = []; y = []; u = []; u1 = []; draw(); } function toggleHelp() { var p = q('help_panel'); var open = (p.style.display === 'none' || p.style.display === ''); p.style.display = open ? 'block' : 'none'; setHelpButtonState(open); } function setHelpButtonState(open) { var b = q('btn_help'); if (!b) return; if (open) b.classList.add('is-active'); else b.classList.remove('is-active'); } function setRunButtonsState(running) { var bs = q('btn_start'); var bp = q('btn_stop'); if (bs) { if (running) bs.classList.add('is-active'); else bs.classList.remove('is-active'); } if (bp) { if (running) bp.classList.remove('is-active'); else bp.classList.add('is-active'); } } function setSwitchLine(useMaster) { var line = q('pre_block_line'); var block = q('pre_block'); if (!line || !block) return; if (useMaster) { line.setAttribute('x1', '215'); line.setAttribute('y1', '205'); line.setAttribute('x2', '250'); line.setAttribute('y2', '180'); block.classList.add('switch-disabled'); block.classList.remove('switch-active'); } else { line.setAttribute('x1', '200'); line.setAttribute('y1', '180'); line.setAttribute('x2', '250'); line.setAttribute('y2', '180'); block.classList.remove('switch-disabled'); block.classList.add('switch-active'); } useMasterSetpoint = useMaster; } function toggleSetpointSource() { setSwitchLine(!useMasterSetpoint) } function setFeedbackSwitch(allow) { var line = q('fb_switch_line'); var text = q('fb_switch_text'); var block = q('fb_switch'); if (!line || !text || !block) return; if (allow) { line.style.display = ''; text.style.display = 'none'; block.classList.remove('switch-disabled'); block.classList.add('switch-active'); } else { line.style.display = 'none'; text.style.display = ''; block.classList.remove('switch-active'); block.classList.add('switch-disabled'); } allowSensSignal = allow; } function toggleFeedbackSwitch() { setFeedbackSwitch(!allowSensSignal) }/* Sync incoming state into UI fields and plotting buffers. */function updateUI(d) { if (!d) return; if (runPending) { q('running').textContent = d.running ? 'RUNNING' : 'STOPPED'; runPending = false; } setRunButtonsState(!!d.running); updateModelUI(); currentTime = d.time || 0; q('time').textContent = d.time.toFixed(2); q('output').textContent = d.output.toFixed(2); q('control').textContent = d.control.toFixed(3); q('actuator').textContent = d.actuator.toFixed(3); if (!synced) { if (!loadSettings()) { q('setpoint').value = d.setpoint_cfg.toFixed(2); q('kp').value = d.kp.toFixed(3); q('ki').value = d.ki.toFixed(3); q('kd').value = d.kd.toFixed(3); q('dt').value = d.dt; q('model').value = d.model.toString(); q('gain').value = d.gain.toFixed(2); q('tau').value = d.tau.toFixed(2); q('wn').value = d.wn.toFixed(2); q('zeta').value = d.zeta.toFixed(2); q('dead').value = d.dead; q('act_min').value = d.act_min.toFixed(2); q('act_max').value = d.act_max.toFixed(2); q('act_inject').checked = !!d.act_inject; q('act_absorb').checked = !!d.act_absorb; setWindow(); setPlotSize(); } synced = true; } sp.push(d.setpoint); y.push(d.output); u.push(d.control); u1.push(d.actuator); if (sp.length > hist) { sp.shift(); y.shift(); u.shift(); u1.shift(); } updateActuatorModeUI(); draw(); }/* Build a readable transfer function string. */function transferText(d) { if (d.model === 0) { var eq = 'Y(s)/U(s) = K/(tau*s+1)'; eq += ' | K=' + d.gain.toFixed(2) + ', tau=' + d.tau.toFixed(2); return eq; } var eq = 'Y(s)/U(s) = K*wn^2/(s^2+2*zeta*wn*s+wn^2)'; eq += ' | K=' + d.gain.toFixed(2) + ', wn=' + d.wn.toFixed(2) + ', zeta=' + d.zeta.toFixed(2); return eq; }/* Show only the parameters relevant to the selected model. */function updateModelUI() { var firstOrder = (q('model').value === '0'); q('row_tau').style.display = firstOrder ? 'inline-flex' : 'none'; q('row_wn').style.display = firstOrder ? 'none' : 'inline-flex'; q('row_zeta').style.display = firstOrder ? 'none' : 'inline-flex'; }/* Highlight actuator block based on inject/absorb selection. */function updateActuatorModeUI() { var inject = q('act_inject').checked; var absorb = q('act_absorb').checked; var block = q('act_block'); if (!block) return; var fill = '#f3ffeeff'; if (inject && !absorb) fill = '#fffce4ff'; else if (!inject && absorb) fill = '#f0f8ffff'; else if (!inject && !absorb) fill = '#ffbabaff'; block.style.fill = fill; }/* Keep color pickers filled with their selected color. */function updateColorPickers() { q('color_sp').style.background = q('color_sp').value; q('color_u').style.background = q('color_u').value; q('color_u1').style.background = q('color_u1').value; q('color_y').style.background = q('color_y').value; }/* Redraw the plot using the current buffers and toggles. */function draw() { var c = q('plot'); var ctx = c.getContext('2d'); var padL = 36, padR = 8, padT = 8, padB = 22; var w = c.width - padL - padR; var h = c.height - padT - padB; var inset = 0.10 * h; ctx.clearRect(0, 0, c.width, c.height); ctx.strokeStyle = '#222'; ctx.strokeRect(padL, padT, w, h); var series = []; if (q('show_sp').checked) series.push(sp); if (q('show_u').checked) series.push(u); if (q('show_u1').checked) series.push(u1); if (q('show_y').checked) series.push(y); var vals = []; for (var si = 0; si < series.length; si++) { vals = vals.concat(series[si]); } if (vals.length === 0) { vals = [0, 1]; } var max = Math.max.apply(null, vals); var min = Math.min.apply(null, vals); var range = (max - min) || 1; ctx.fillStyle = '#222'; ctx.font = '10px Arial'; ctx.fillText('Temp', 2, padT + 10); for (var i = 0; i <= 4; i++) { var ty = padT + inset + (1 - (i / 4)) * (h - 2 * inset); var val = (min + (i / 4) * range).toFixed(0); ctx.fillText(val, 2, ty + 3); ctx.strokeStyle = '#edededff'; ctx.beginPath(); ctx.moveTo(padL, ty); ctx.lineTo(padL + w, ty); ctx.stroke(); } var t0 = (currentTime - windowSec); if (t0 < 0) t0 = 0; ctx.fillStyle = '#222'; ctx.fillText('t0=' + t0.toFixed(1) + 's', padL, padT + h + 14); ctx.fillText('t=' + currentTime.toFixed(1) + 's', padL + w - 46, padT + h + 14); function plot(arr, color) { ctx.strokeStyle = color; ctx.beginPath(); for (var i = 0; i < arr.length; i++) { var x = padL + i * (w / (hist - 1)); var ypix = padT + inset + (1 - ((arr[i] - min) / range)) * (h - 2 * inset); if (i === 0) ctx.moveTo(x, ypix); else ctx.lineTo(x, ypix); } ctx.stroke(); } if (q('show_sp').checked) plot(sp, q('color_sp').value || '#000'); if (q('show_u').checked) plot(u, q('color_u').value || '#9b9b9b'); if (q('show_u1').checked) plot(u1, q('color_u1').value || '#6abf4b'); if (q('show_y').checked) plot(y, q('color_y').value || '#b00'); } setWindow(); setPlotSize(); setSwitchLine(useMasterSetpoint); setFeedbackSwitch(allowSensSignal); var switchBlock = q('pre_block'); if (switchBlock) { switchBlock.addEventListener('click', toggleSetpointSource); } var feedbackSwitch = q('fb_switch'); if (feedbackSwitch) { feedbackSwitch.addEventListener('click', toggleFeedbackSwitch); } api('/api/state', updateUI); setInterval(function () { api('/api/state?t=' + (new Date().getTime()), updateUI); }, 200);
     </script>
 </body>
 

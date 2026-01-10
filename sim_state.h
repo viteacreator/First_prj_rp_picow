@@ -20,7 +20,7 @@ typedef struct {
     float tau;
     float wn;
     float zeta;
-    float dead_time_ms;
+    int dead_time_ms;
 } plant_params_t;
 
 typedef struct {
@@ -28,6 +28,7 @@ typedef struct {
     float master_setpoint;
     int use_master_setpoint;
     int allow_sens_signal;
+    int dt_ms;
     pid_params_t pid;
     plant_params_t plant;
     int act_inject;

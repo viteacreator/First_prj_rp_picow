@@ -6,8 +6,8 @@
 #include "sim_state.h"
 #include "debug.h"
 
-#define SIM_DT_S 0.01f
-#define DEAD_TIME_BUFFER 128
+#define DEFAULT_DT_MS 10
+#define DEAD_TIME_BUFFER 256
 
 /** Map controller output into actuator output based on mode and limits. */
 static float actuator_apply(float u, int inject, int absorb, float min_out, float max_out) {
@@ -60,8 +60,8 @@ static void core1_main(void) {
     int delay_idx = 0;
     int delay_len = 0;
 
-    absolute_time_t next_tick = make_timeout_time_ms((int)(SIM_DT_S * 1000.0f));
-    LOGI("SIM core1 started, dt=%.3f s\n", SIM_DT_S);
+    absolute_time_t next_tick = make_timeout_time_ms(DEFAULT_DT_MS);
+    LOGI("SIM core1 started, dt=%d ms\n", DEFAULT_DT_MS);
 
     while (true) {
         sim_config_t cfg;
@@ -87,6 +87,11 @@ static void core1_main(void) {
             delay_len = 0;
         }
 
+        int dt_ms = cfg.dt_ms;
+        if (dt_ms < 1) dt_ms = 1;
+        if (dt_ms > 1000) dt_ms = 1000;
+        float dt = dt_ms / 1000.0f;
+
         pid.kp = cfg.pid.kp;
         pid.ki = cfg.pid.ki;
         pid.kd = cfg.pid.kd;
@@ -96,14 +101,14 @@ static void core1_main(void) {
         if (cfg.running) {
             float feedback = cfg.allow_sens_signal ? y : 0.0f;
             float error = setpoint - feedback;
-            u = pid_step(&pid, error, SIM_DT_S);
+            u = pid_step(&pid, error, dt);
         } else {
             u = 0.0f;
         }
         /* Apply actuator direction and limits based on UI selection. */
         u1 = actuator_apply(u, cfg.act_inject, cfg.act_absorb, cfg.act_min, cfg.act_max);
 
-        int desired_len = (int)(cfg.plant.dead_time_ms / (SIM_DT_S * 1000.0f));
+        int desired_len = (dt_ms > 0) ? (cfg.plant.dead_time_ms / dt_ms) : 0;
         if (desired_len < 0) desired_len = 0;
         if (desired_len >= DEAD_TIME_BUFFER) desired_len = DEAD_TIME_BUFFER - 1;
         delay_len = desired_len;
@@ -116,15 +121,15 @@ static void core1_main(void) {
 
         if (cfg.plant.model == PLANT_FIRST_ORDER) {
             first_order_params_t p = {cfg.plant.gain, cfg.plant.tau};
-            y = plant_first_order_step(y, u_delayed, &p, SIM_DT_S);
+            y = plant_first_order_step(y, u_delayed, &p, dt);
         } else {
             second_order_params_t p = {cfg.plant.wn, cfg.plant.zeta, cfg.plant.gain};
-            y = plant_second_order_step(&second_state, u_delayed, &p, SIM_DT_S);
+            y = plant_second_order_step(&second_state, u_delayed, &p, dt);
         }
         LOGD("SIM step: sp=%.2f u=%.3f u1=%.3f y=%.2f\n", setpoint, u, u1, y);
 
         critical_section_enter_blocking(&g_sim.lock);
-        g_sim.rt.time_s += SIM_DT_S;
+        g_sim.rt.time_s += dt;
         g_sim.rt.setpoint = setpoint;
         g_sim.rt.control = u;
         g_sim.rt.actuator = u1;
@@ -132,7 +137,7 @@ static void core1_main(void) {
         critical_section_exit(&g_sim.lock);
 
         sleep_until(next_tick);
-        next_tick = delayed_by_ms(next_tick, (int)(SIM_DT_S * 1000.0f));
+        next_tick = delayed_by_ms(next_tick, dt_ms);
     }
 }
 

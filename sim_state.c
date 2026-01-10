@@ -11,6 +11,7 @@ void sim_state_init(void) {
     g_sim.cfg.master_setpoint = 0.0f;
     g_sim.cfg.use_master_setpoint = 0;
     g_sim.cfg.allow_sens_signal = 1;
+    g_sim.cfg.dt_ms = 10;
     g_sim.cfg.pid.kp = 2.0f;
     g_sim.cfg.pid.ki = 0.5f;
     g_sim.cfg.pid.kd = 0.1f;
@@ -19,7 +20,7 @@ void sim_state_init(void) {
     g_sim.cfg.plant.tau = 8.0f;
     g_sim.cfg.plant.wn = 1.2f;
     g_sim.cfg.plant.zeta = 0.7f;
-    g_sim.cfg.plant.dead_time_ms = 0.0f;
+    g_sim.cfg.plant.dead_time_ms = 0;
     g_sim.cfg.act_inject = 1;
     g_sim.cfg.act_absorb = 1;
     g_sim.cfg.act_min = -100.0f;
