@@ -19,7 +19,7 @@ void pid_reset(pid_t *pid) {
 
 /** Compute PID output for the given error and time step. */
 float pid_step(pid_t *pid, float error, float dt) {
-    float derivative = (dt > 0.0f) ? (error - pid->prev_error) / dt : 0.0f;
+    float derivative = (dt > 0.0f) ? (error - pid->prev_error) / dt : 0.0f; // Avoid div by zero
     pid->integrator += error * dt;
 
     float out = (pid->kp * error) + (pid->ki * pid->integrator) + (pid->kd * derivative);

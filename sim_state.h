@@ -26,31 +26,31 @@ typedef struct {
 typedef struct {
     float setpoint;
     float master_setpoint;
-    int use_master_setpoint;
-    int allow_sens_signal;
-    int dt_ms;
+    int use_master_setpoint; // flag: use master setpoint if non-zero
+    int allow_sens_signal; // flag: allow sensor feedback if non-zero
+    int dt_ms; // Simulation time step in milliseconds
     pid_params_t pid;
     plant_params_t plant;
-    int act_inject;
-    int act_absorb;
+    int act_inject; // flag: actuator inject mode if non-zero
+    int act_absorb; // flag: actuator absorb mode if non-zero
     float act_min;
     float act_max;
-    int running;
+    int running; // flag: simulation running if non-zero
 } sim_config_t;
 
 typedef struct {
-    float time_s;
-    float setpoint;
-    float control;
-    float actuator;
-    float output;
+    float time_s; // Elapsed simulation time in seconds
+    float setpoint; // Current active setpoint
+    float control; // Current controller output
+    float actuator; // Current actuator value after limits
+    float output; // Current plant output
 } sim_runtime_t;
 
 typedef struct {
-    critical_section_t lock;
-    sim_config_t cfg;
-    sim_runtime_t rt;
-    int reset_requested;
+    critical_section_t lock; // iteresting lock for thread-safe access
+    sim_config_t cfg; // simulation configuration parameters
+    sim_runtime_t rt; // real-time simulation data
+    int reset_requested; // flag: reset requested by external controller
 } sim_state_t;
 
 extern sim_state_t g_sim;

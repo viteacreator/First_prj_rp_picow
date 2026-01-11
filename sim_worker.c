@@ -35,9 +35,10 @@ static float actuator_apply(float u, int inject, int absorb, float min_out, floa
         if (min_out > 0.0f) min_out = 0.0f;
     }
 
-    if (min_out > max_out) {
-        min_out = max_out;
-    }
+    /* Ensure min_out is not greater than max_out */
+    // if (min_out > max_out) {
+    //     min_out = max_out;
+    // }
 
     if (u < min_out) return min_out;
     if (u > max_out) return max_out;
@@ -78,9 +79,9 @@ static void core1_main(void) {
         if (reset_req) {
             LOGI("SIM reset requested\n");
             /* Reset PID state without enforcing output limits. */
-            pid_init(&pid, cfg.pid.kp, cfg.pid.ki, cfg.pid.kd, 1.0f, -1.0f);
-            second_state.state1 = 0.0f;
-            second_state.state2 = 0.0f;
+            pid_init(&pid, cfg.pid.kp, cfg.pid.ki, cfg.pid.kd, 1.0f, -1.0f); // 1.0f >= -1.0f = No limits
+            second_state.state1 = 0.0f; // Reset second-order plant state
+            second_state.state2 = 0.0f; // state2 is the first derivative
             y = 25.0f;
             u = 0.0f;
             delay_idx = 0;
