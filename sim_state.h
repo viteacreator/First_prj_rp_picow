@@ -39,11 +39,11 @@ typedef struct {
 } sim_config_t;
 
 typedef struct {
-    float time_s; // Elapsed simulation time in seconds
-    float setpoint; // Current active setpoint
-    float control; // Current controller output
-    float actuator; // Current actuator value after limits
-    float output; // Current plant output
+    float time_s; // Elapsed simulation time in seconds (t)
+    float setpoint; // Current active setpoint r(t)
+    float control; // Current controller output u(t)
+    float actuator; // Current actuator value after limits u1(t)
+    float output; // Current plant output y(1)
 } sim_runtime_t;
 
 typedef struct {
@@ -61,14 +61,19 @@ void sim_state_init(void);
 void sim_state_set_setpoint(float setpoint);
 /** Get operator (UI) setpoint. */
 float sim_state_get_setpoint(void);
+
 /** Set master setpoint from external controller. */
 void master_setpoint_set(float m_setpoint);
 /** Get master setpoint from external controller. */
 float master_setpoint_get(void);
-/** Select whether to use master setpoint as active reference. */
+
+/** 
+ * Select whether to use master setpoint as active reference. 
+ * */
 void sim_state_set_use_master_setpoint(int use_master);
 /** Get whether master setpoint is active. */
 int sim_state_get_use_master_setpoint(void);
+
 /** Enable/disable sensor feedback signal in the control loop. */
 void sim_state_set_allow_sens_signal(int allow);
 /** Get whether sensor feedback is enabled. */
