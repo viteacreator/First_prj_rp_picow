@@ -1,0 +1,29 @@
+# Code Owners
+# 
+# This file defines individuals or teams that are responsible for code in this repository.
+# Code owners are automatically requested for review when someone opens a pull request 
+# that modifies code that they own.
+#
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+# Unless a later match takes precedence, these users will be requested for review
+* @viteacreator
+
+# WiFi and network-related files
+wifi_manager.* @viteacreator
+mdns_manager.* @viteacreator
+web_server.* @viteacreator
+lwipopts.h @viteacreator
+
+# PID control and simulation
+pid.* @viteacreator
+plant.* @viteacreator
+sim_*.* @viteacreator
+
+# Build configuration
+CMakeLists.txt @viteacreator
+pico_sdk_import.cmake @viteacreator
+
+# Documentation - anyone can propose changes, but owner must approve
+*.md @viteacreator
